@@ -1,0 +1,81 @@
+/* =========================================================
+   Accessibility Toolbar
+========================================================= */
+
+#accessibility-toolbar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    z-index: 1000;
+}
+
+#accessibility-toolbar button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+#accessibility-toolbar button:hover {
+    background: var(--surface-alt);
+}
+
+#accessibility-toolbar button[aria-pressed="true"] {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* =========================================================
+   High-contrast mode reinforcement (WCAG AAA target)
+========================================================= */
+
+html[data-contrast="high"] .video-card,
+html[data-contrast="high"] .compare-card,
+html[data-contrast="high"] .not-found,
+html[data-contrast="high"] #details-panel {
+    border-width: 2px;
+}
+
+html[data-contrast="high"] .rating-badge {
+    border: 2px solid var(--text);
+}
+
+html[data-contrast="high"] :focus-visible {
+    outline-width: 4px;
+}
+
+/* =========================================================
+   Screen-reader-only utility (for aria-live status text that
+   shouldn't take up visual space but must be announced)
+========================================================= */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* =========================================================
+   Touch targets — minimum 44px hit area even for small icons
+========================================================= */
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+}

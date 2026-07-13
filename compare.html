@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>HyperStim Video Audit — Compare</title>
+    <meta name="description" content="Compare two children's videos side by side across pacing, recovery, and reward-patterning scores.">
+
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/accessibility.css">
+</head>
+
+<body>
+
+<div id="accessibility-toolbar">
+    <button id="text-smaller" aria-label="Decrease text size">A-</button>
+    <button id="text-reset" aria-label="Reset text size">A</button>
+    <button id="text-larger" aria-label="Increase text size">A+</button>
+    <button id="contrast-toggle" aria-label="Toggle high contrast mode">High Contrast</button>
+</div>
+
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<header>
+    <nav aria-label="Main Navigation">
+        <h1>HyperStim Video Audit</h1>
+        <ul>
+            <li><a href="index.html">Lookup</a></li>
+            <li><a href="compare.html" aria-current="page">Compare</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main id="main-content">
+
+<section id="compare-picker">
+    <h2>Compare Two Videos</h2>
+    <p>
+        Pick any two videos from the dataset. Scores are relative to this dataset sample — see
+        <a href="index.html">how to read these scores</a>.
+    </p>
+
+    <div class="compare-selects">
+        <label class="video-a">
+            Video A
+            <select id="compare-a"><option value="">Select a video…</option></select>
+        </label>
+
+        <label class="video-b">
+            Video B
+            <select id="compare-b"><option value="">Select a video…</option></select>
+        </label>
+    </div>
+
+    <button id="compare-preset" type="button" class="secondary">
+        Show a representative historical vs. contemporary comparison
+    </button>
+</section>
+
+<section id="compare-results">
+    <h2>Results</h2>
+
+    <div id="compare-headline" aria-live="polite">Select two videos above to compare.</div>
+
+    <div id="compare-similarities" hidden></div>
+
+    <div class="matrix-scroll">
+        <div class="comparison-matrix">
+            <div class="compare-video-pair" id="compare-video-pair"></div>
+            <div class="compare-type-grid" id="compare-type-grid"></div>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<footer>
+    <p>Measures production style only. No claims of developmental harm are made.
+    This is a pilot sample — see <a href="resources.html">Resources</a> for dataset scope and methodology.</p>
+</footer>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/shared.js"></script>
+<script src="assets/js/compare.js"></script>
+
+</body>
+</html>

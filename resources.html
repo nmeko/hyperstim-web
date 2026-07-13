@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>HyperStim Video Audit — Resources</title>
+    <meta name="description" content="Methodology, dataset scope, and non-goals for the HyperStim video audit.">
+
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/accessibility.css">
+</head>
+
+<body>
+
+<div id="accessibility-toolbar">
+    <button id="text-smaller" aria-label="Decrease text size">A-</button>
+    <button id="text-reset" aria-label="Reset text size">A</button>
+    <button id="text-larger" aria-label="Increase text size">A+</button>
+    <button id="contrast-toggle" aria-label="Toggle high contrast mode">High Contrast</button>
+</div>
+
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<header>
+    <nav aria-label="Main Navigation">
+        <h1>HyperStim Video Audit</h1>
+        <ul>
+            <li><a href="index.html">Lookup</a></li>
+            <li><a href="compare.html">Compare</a></li>
+            <li><a href="resources.html" aria-current="page">Resources</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main id="main-content">
+
+<section id="resources-intro">
+    <h2>Resources &amp; Methodology</h2>
+    <p>
+        This page explains where the data comes from, what the taxonomy actually measures,
+        and — just as important — what this site does <em>not</em> claim.
+    </p>
+
+    <details class="explainer" open>
+        <summary>How to read these scores</summary>
+        <p>
+            Every video gets an overall score and a breakdown across three categories:
+            <strong>Pacing Intensification</strong>, <strong>Recovery Denial</strong>, and
+            <strong>Reward Patterning</strong>. Each category is built from named,
+            computationally-measured features — never a subjective judgment call.
+        </p>
+        <ul class="band-key">
+            <li><span class="rating-badge rating-good">Good</span> calmer than most of the dataset</li>
+            <li><span class="rating-badge rating-moderate">Moderate</span> typical for this dataset</li>
+            <li><span class="rating-badge rating-extreme">Extremely High</span> substantially more intense than most</li>
+        </ul>
+    </details>
+</section>
+
+<section id="resources-list">
+    <h2>The Taxonomy: 3 Categories, 10 Pattern Types, 13 Features</h2>
+
+    <h3>Pacing Intensification</h3>
+    <p>How fast the video moves visually.</p>
+    <ul>
+        <li><strong>Rapid Cutting</strong> — how often the shot changes.</li>
+        <li><strong>Scene Discontinuity</strong> — how visually different one shot is from the next.</li>
+        <li><strong>Chromatic Instability</strong> — how much the color palette shifts frame to frame.</li>
+        <li><strong>Visual Intensity</strong> — overall color saturation and vividness.</li>
+        <li><strong>Continuous Visual Motion</strong> — how much of the video has visible motion, and how rarely it holds still.</li>
+    </ul>
+
+    <h3>Recovery Denial</h3>
+    <p>How rarely the video lets a viewer's arousal come back down.</p>
+    <ul>
+        <li><strong>Sustained Audio Intensity</strong> — average loudness across the video.</li>
+        <li><strong>Loudness Oscillation</strong> — how often volume jumps sharply.</li>
+        <li><strong>Silence Elimination</strong> — what share of the video is near-total silence.</li>
+    </ul>
+
+    <h3>Reward Patterning</h3>
+    <p>How often the video sets up a small payoff.</p>
+    <ul>
+        <li><strong>Musical Build-Resolve</strong> — how often music builds tension and releases it.</li>
+        <li><strong>Surprise Reveals</strong> — how often a cut lines up with a sudden sound burst.</li>
+    </ul>
+
+    <p class="disclaimer">
+        A supplementary, exploratory signal set derived from video transcripts/subtitles (obligation
+        language, parasocial phrasing, cliffhanger cues) may appear labeled separately in the raw
+        data. It is not part of the core, content-independent taxonomy above and is not used in the
+        headline scores on this site.
+    </p>
+</section>
+
+<section id="dataset-scope">
+    <h2>Dataset Scope</h2>
+    <p>
+        <span id="dataset-scope-text">
+            This site currently reflects a small pilot sample from an ongoing research pipeline,
+            not the full research corpus. Exact counts are shown live from the current dataset below.
+        </span>
+    </p>
+    <p id="dataset-scope-numbers" aria-live="polite"></p>
+    <p>
+        The dataset is produced by a separate measurement pipeline (ffmpeg/OpenCV feature
+        extraction) and joined/percentile-ranked by <code>scripts/build_dataset.py</code>. This
+        site does not analyze video files itself and cannot score a video the pipeline hasn't
+        already measured — see the Lookup page for what happens when a search doesn't match.
+    </p>
+</section>
+
+<section id="non-goals">
+    <h2>What This Site Is Not</h2>
+    <ul>
+        <li>Not a live video analysis tool — it cannot process a video the pipeline hasn't already measured.</li>
+        <li>Not a parental-control or content-filtering product — it doesn't block or rate content appropriateness.</li>
+        <li>Not a diagnostic or clinical tool — it makes no claims about individual developmental outcomes.</li>
+        <li>Not a claim of broader coverage than the data actually has — if the dataset is a pilot/subset, that's stated wherever counts or scores appear.</li>
+    </ul>
+</section>
+
+</main>
+
+<footer>
+    <p>Measures production style only. No claims of developmental harm are made.</p>
+</footer>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/shared.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const el = document.getElementById("dataset-scope-numbers");
+        if (el && typeof SITE_DATA !== "undefined") {
+            const meta = SITE_DATA.meta || {};
+            const size = SITE_DATA.videos.length;
+            let text = `Current dataset: ${size} videos.`;
+            if (typeof meta.fully_scored_count === "number") {
+                text += ` ${meta.fully_scored_count} are fully scored across all 10 pattern types; ${meta.partially_scored_count} have partial coverage (some individual types show "Not enough data" rather than a score).`;
+            }
+            if (meta.full_corpus_size) {
+                text += ` The pipeline's eventual target scope is ${meta.full_corpus_size} videos.`;
+            }
+            el.textContent = text;
+        }
+    });
+</script>
+
+</body>
+</html>

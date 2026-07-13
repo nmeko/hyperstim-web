@@ -1,0 +1,274 @@
+/* =========================================================
+   Design Tokens
+========================================================= */
+
+:root {
+    --bg: #ffffff;
+    --surface: #f8f9fb;
+    --surface-alt: #eef1f5;
+    --text: #1a1a1a;
+    --muted: #5b6573;
+
+    --primary: #1f6feb;
+    --primary-hover: #1656b8;
+
+    --accent-a: #1f6feb;   /* Video A in compare */
+    --accent-b: #b7791f;   /* Video B in compare */
+
+    --good: #1a7f37;
+    --moderate: #b7791f;
+    --extreme: #b42318;
+    --unknown: #6b7280;
+
+    --border: #d0d7de;
+
+    --radius: 0.75rem;
+    --radius-sm: 0.5rem;
+
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+
+    --content-width: 1200px;
+
+    --focus-ring: 3px solid var(--primary);
+}
+
+html[data-contrast="high"] {
+    --bg: #000000;
+    --surface: #111111;
+    --surface-alt: #1a1a1a;
+    --text: #ffffff;
+    --muted: #e6e6e6;
+
+    --primary: #00ffff;
+    --primary-hover: #00cccc;
+
+    --accent-a: #00ffff;
+    --accent-b: #ffff00;
+
+    --good: #00ff00;
+    --moderate: #ffff00;
+    --extreme: #ff5050;
+    --unknown: #cccccc;
+
+    --border: #ffffff;
+    --focus-ring: 3px solid #ffff00;
+}
+
+/* =========================================================
+   Base Reset
+========================================================= */
+
+* { box-sizing: border-box; }
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+h1, h2, h3, h4 { line-height: 1.25; }
+
+p { margin: 0 0 1rem; }
+
+a { color: var(--primary); }
+
+img { max-width: 100%; height: auto; }
+
+/* =========================================================
+   Layout
+========================================================= */
+
+main {
+    max-width: var(--content-width);
+    margin: auto;
+    padding: 0 1rem;
+}
+
+section {
+    padding: 2.5rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+section:last-of-type { border-bottom: none; }
+
+header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+header nav {
+    max-width: var(--content-width);
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+header nav h1 {
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+header nav ul {
+    list-style: none;
+    display: flex;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+}
+
+header nav a {
+    text-decoration: none;
+    color: var(--text);
+    font-weight: 600;
+    padding: 0.25rem 0;
+    border-bottom: 2px solid transparent;
+}
+
+header nav a[aria-current="page"] {
+    border-bottom-color: var(--primary);
+}
+
+header nav a:hover { color: var(--primary); }
+
+footer {
+    max-width: var(--content-width);
+    margin: auto;
+    padding: 2rem 1rem 3rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+/* =========================================================
+   Hero
+========================================================= */
+
+#hero { text-align: center; }
+
+#hero h2 { font-size: 1.75rem; }
+
+#hero p {
+    max-width: 65ch;
+    margin-inline: auto;
+    color: var(--muted);
+}
+
+/* =========================================================
+   Inputs
+========================================================= */
+
+input, button, select, textarea {
+    font: inherit;
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+}
+
+button {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    cursor: pointer;
+    font-weight: 600;
+    min-height: 44px;
+    min-width: 44px;
+}
+
+button:hover { background: var(--primary-hover); }
+
+button.secondary {
+    background: transparent;
+    color: var(--primary);
+}
+
+button.secondary:hover {
+    background: var(--surface-alt);
+}
+
+/* =========================================================
+   Focus visibility — explicit, not the browser default
+========================================================= */
+
+:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 3px;
+}
+
+/* =========================================================
+   Skip link
+========================================================= */
+
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 2000;
+}
+
+.skip-link:focus {
+    left: 1rem;
+    top: 1rem;
+    background: black;
+    color: white;
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+}
+
+/* =========================================================
+   Card Grid — fluid, no manual column breakpoints
+========================================================= */
+
+#card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+/* =========================================================
+   Responsive breakpoints
+========================================================= */
+
+@media (max-width: 768px) {
+    header nav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    header nav ul {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 400px) {
+    section { padding: 1.5rem 0; }
+    #hero h2 { font-size: 1.4rem; }
+}
+
+/* =========================================================
+   Reduced motion — correctness requirement, not decoration
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation: none !important; transition: none !important; }
+}
+
+/* Scroll-reveal: SAFE BY DEFAULT.
+   Elements are visible unless JS has explicitly armed them. */
+[data-reveal] { opacity: 1; }
+[data-reveal].reveal-armed { opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease; transform: translateY(12px); }
+[data-reveal].reveal-armed.revealed { opacity: 1; transform: none; }

@@ -1,0 +1,480 @@
+/* =========================================================
+   Rating badges
+========================================================= */
+
+.rating-badge {
+    display: inline-block;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.rating-good { background: var(--good); color: white; }
+.rating-moderate { background: var(--moderate); color: white; }
+.rating-extreme { background: var(--extreme); color: white; }
+.rating-unknown { background: var(--unknown); color: white; }
+
+/* =========================================================
+   "How to read these scores" collapsible explainer
+========================================================= */
+
+.explainer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.25rem 1.25rem;
+    margin-top: 1rem;
+}
+
+.explainer summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0.75rem 0;
+}
+
+.explainer .band-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.explainer .band-key li {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.disclaimer {
+    font-size: 0.9rem;
+    color: var(--muted);
+    border-left: 3px solid var(--border);
+    padding-left: 1rem;
+    margin: 1.5rem 0;
+}
+
+/* =========================================================
+   Audience toggle (parent / creator / regulator)
+========================================================= */
+
+#audience-toggle {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 1rem 0;
+}
+
+#audience-toggle button {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+#audience-toggle button[aria-pressed="true"] {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+#audience-note {
+    max-width: 65ch;
+    margin: 1rem auto 0;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-align: left;
+}
+
+/* =========================================================
+   Lookup / drop zone
+========================================================= */
+
+#lookup-area {
+    text-align: center;
+}
+
+#drop-zone {
+    max-width: 700px;
+    margin: 1.25rem auto 0;
+    padding: 1.5rem;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+#drop-zone.drag-over {
+    border-color: var(--primary);
+    background: var(--surface);
+}
+
+#drop-zone input[type="text"] {
+    width: 100%;
+    max-width: 500px;
+}
+
+#drop-zone .drop-hint {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+#file-input { display: none; }
+
+/* =========================================================
+   Filters bar
+========================================================= */
+
+#filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin: 1.5rem 0 0.5rem;
+}
+
+#filters-bar label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+#result-count {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+/* =========================================================
+   Single-video result (lookup page)
+========================================================= */
+
+#results {
+    margin-top: 0.5rem;
+}
+
+#workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 66%) minmax(0, 34%);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+#video-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#details-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: sticky;
+    top: 4.5rem;
+}
+
+#details-panel h3 { margin-top: 0; }
+
+.panel-placeholder {
+    color: var(--muted);
+    padding: 2rem 1rem;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+}
+
+@media (max-width: 900px) {
+    #workspace {
+        grid-template-columns: 1fr;
+    }
+    #details-panel {
+        position: static;
+        max-height: none;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+    #workspace {
+        grid-template-columns: minmax(0, 60%) minmax(0, 40%);
+    }
+}
+
+iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: none;
+    border-radius: var(--radius);
+}
+
+.not-found {
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.type-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.type-row {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+}
+
+.type-row h4 {
+    margin: 0 0 0.25rem;
+    font-size: 0.95rem;
+}
+
+.type-row p {
+    margin: 0.25rem 0 0.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.type-row .raw-values {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: ui-monospace, monospace;
+}
+
+/* =========================================================
+   Card grid
+========================================================= */
+
+.video-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+}
+
+.video-card img { width: 100%; display: block; }
+
+.video-card h3,
+.video-card p,
+.video-card ul,
+.video-card button {
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+.video-card ul.score-list {
+    list-style: none;
+    padding: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.video-card .video-channel { color: var(--muted); font-size: 0.9rem; }
+.video-card .video-category { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+
+.video-card button.details-button {
+    margin-top: auto;
+    margin-bottom: 1rem;
+}
+
+/* =========================================================
+   Compare page
+========================================================= */
+
+.compare-selects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+.compare-selects label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-weight: bold;
+    min-width: 260px;
+}
+
+.compare-selects.video-a label { color: var(--accent-a); }
+.compare-selects.video-b label { color: var(--accent-b); }
+
+#compare-preset {
+    display: block;
+    margin: 1rem auto 0;
+}
+
+#compare-headline {
+    text-align: center;
+    font-size: 1.15rem;
+    padding: 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-top: 1.5rem;
+}
+
+#compare-similarities {
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    border-left: 3px solid var(--good);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+}
+
+/* =========================================================
+   Comparison matrix (fixed row labels, one column per video)
+========================================================= */
+
+.matrix-scroll {
+    overflow-x: auto;
+    margin-top: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.comparison-matrix {
+    display: grid;
+    grid-template-columns: minmax(150px, 200px) minmax(220px, 1fr) minmax(220px, 1fr);
+    min-width: 640px;
+}
+
+.compare-video-pair,
+.compare-type-grid,
+.matrix-row,
+.matrix-group-row {
+    display: contents;
+}
+
+.matrix-row > *,
+.matrix-group-row > * {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+}
+
+.matrix-row > *:last-child,
+.matrix-group-row > *:last-child {
+    border-right: none;
+}
+
+.matrix-label {
+    position: sticky;
+    left: 0;
+    background: var(--surface);
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.2rem;
+    font-size: 0.9rem;
+}
+
+.matrix-label-note {
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin: 0;
+}
+
+.matrix-group-row > * {
+    background: var(--surface-alt);
+    font-weight: 700;
+}
+
+.matrix-header > * {
+    position: sticky;
+    top: 0;
+    background: var(--surface-alt);
+    z-index: 2;
+    font-weight: 700;
+}
+
+.matrix-header .matrix-label { z-index: 3; }
+
+.matrix-cell {
+    background: var(--bg);
+}
+
+.matrix-cell.diff-highlight {
+    background: rgba(180, 35, 24, 0.08);
+}
+
+html[data-contrast="high"] .matrix-cell.diff-highlight {
+    background: var(--surface);
+    outline: 2px solid var(--extreme);
+    outline-offset: -2px;
+}
+
+.matrix-video-cell iframe {
+    margin-bottom: 0.5rem;
+}
+
+.matrix-video-cell.video-a { border-top: 3px solid var(--accent-a); }
+.matrix-video-cell.video-b { border-top: 3px solid var(--accent-b); }
+
+@media (max-width: 900px) {
+    .compare-selects { flex-direction: column; align-items: center; }
+}
+
+.compare-meter-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+}
+
+.compare-meter-row:last-child { margin-bottom: 0; }
+
+.compare-meter-label {
+    width: 60px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.compare-meter-track {
+    flex: 1;
+    height: 10px;
+    background: var(--surface-alt);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.compare-meter-fill {
+    height: 100%;
+    border-radius: 999px;
+}
+
+.compare-meter-fill.a { background: var(--accent-a); }
+.compare-meter-fill.b { background: var(--accent-b); }
+
+.compare-meter-value {
+    width: 36px;
+    font-size: 0.75rem;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.era-note {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+}

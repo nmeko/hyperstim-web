@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>HyperStim Video Audit — Lookup</title>
+    <meta name="description" content="Look up how intensely a children's video is produced, based on a research taxonomy of pacing, audio intensity, and reward patterning.">
+
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/accessibility.css">
+</head>
+
+<body>
+
+<div id="accessibility-toolbar">
+    <button id="text-smaller" aria-label="Decrease text size">A-</button>
+    <button id="text-reset" aria-label="Reset text size">A</button>
+    <button id="text-larger" aria-label="Increase text size">A+</button>
+    <button id="contrast-toggle" aria-label="Toggle high contrast mode">High Contrast</button>
+</div>
+
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<header>
+    <nav aria-label="Main Navigation">
+        <h1>HyperStim Video Audit</h1>
+        <ul>
+            <li><a href="index.html" aria-current="page">Lookup</a></li>
+            <li><a href="compare.html">Compare</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main id="main-content">
+
+<section id="hero">
+    <h2>Measure Production Style, Not Content Quality</h2>
+    <p>
+        This project measures production-intensity patterns found in children's media,
+        using a research taxonomy of pacing, audio intensity, and reward patterning.
+        It does not judge content appropriateness, educational value, or safety, and it
+        makes no claim that any score causes harm.
+    </p>
+
+    <div id="audience-toggle" role="group" aria-label="View this site as">
+        <span class="sr-only">I'm looking at this as a:</span>
+        <button type="button" data-audience="parent" aria-pressed="true">Parent</button>
+        <button type="button" data-audience="creator" aria-pressed="false">Creator</button>
+        <button type="button" data-audience="regulator" aria-pressed="false">Regulator / Researcher</button>
+    </div>
+
+    <div id="audience-note" aria-live="polite"></div>
+
+    <details class="explainer">
+        <summary>How to read these scores</summary>
+        <p>
+            Every video gets an overall score and a breakdown across three categories:
+            <strong>Pacing Intensification</strong> (how fast the video moves visually),
+            <strong>Recovery Denial</strong> (how rarely it lets a viewer calm back down),
+            and <strong>Reward Patterning</strong> (how often it sets up a small payoff).
+        </p>
+        <ul class="band-key">
+            <li><span class="rating-badge rating-good">Good</span> calmer than most of the dataset</li>
+            <li><span class="rating-badge rating-moderate">Moderate</span> typical for this dataset</li>
+            <li><span class="rating-badge rating-extreme">Extremely High</span> substantially more intense than most</li>
+        </ul>
+        <p class="disclaimer">
+            Scores are <strong>relative to this dataset sample</strong>, not an absolute or medical scale.
+            This tool measures production style only — it makes no claim about developmental harm.
+        </p>
+    </details>
+</section>
+
+<section id="lookup-area">
+    <h2>Search, Paste a Link, or Drop a Video</h2>
+
+    <div id="drop-zone">
+        <input
+            type="text"
+            id="video-input"
+            placeholder="Paste a YouTube URL, video ID, title, or channel"
+            aria-label="Video search, or paste a YouTube link"
+        />
+        <button id="lookup-button" type="button">Look Up Video</button>
+        <p class="drop-hint">
+            You can also drag a YouTube link here, or drop a local video file to match it by filename
+            (dropped files are matched by name only — this tool cannot analyze video content client-side).
+        </p>
+        <div id="drop-status" class="sr-only" aria-live="polite"></div>
+    </div>
+</section>
+
+<section id="results">
+    <h2>Result</h2>
+    <div id="workspace">
+        <div id="video-panel">
+            <div id="video-container">
+                <div class="panel-placeholder">Search above, or choose "View Full Details" on a video below.</div>
+            </div>
+            <div id="rating-container"></div>
+        </div>
+
+        <div id="details-panel" aria-live="polite">
+            <div class="panel-placeholder">Select a lookup result to view its detailed information.</div>
+        </div>
+    </div>
+</section>
+
+<section id="video-grid">
+    <h2>Dataset Videos</h2>
+
+    <div id="filters-bar">
+        <label>
+            Topic
+            <select id="topic-filter">
+                <option value="">All topics</option>
+            </select>
+        </label>
+
+        <label>
+            Sort
+            <select id="sort-select">
+                <option value="intense-first">Most intense first</option>
+                <option value="calm-first">Calmest first</option>
+                <option value="alphabetical">Alphabetical</option>
+            </select>
+        </label>
+
+        <span id="result-count" aria-live="polite"></span>
+    </div>
+
+    <div id="card-grid"></div>
+</section>
+
+</main>
+
+<footer>
+    <p>Measures production style only. No claims of developmental harm are made.
+    This is a pilot sample — see <a href="resources.html">Resources</a> for dataset scope and methodology.</p>
+</footer>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/shared.js"></script>
+<script src="assets/js/lookup.js"></script>
+
+</body>
+</html>
