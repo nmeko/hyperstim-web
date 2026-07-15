@@ -38,6 +38,11 @@
 
 <main id="main-content">
 
+<div class="compare-progress" id="compare-progress" aria-live="polite">
+    <span class="progress-step" id="progress-step-1">1. Pick two videos</span>
+    <span class="progress-step" id="progress-step-2">2. View results</span>
+</div>
+
 <section id="compare-picker">
     <h2>Compare Two Videos</h2>
     <p>
@@ -72,6 +77,7 @@
     <h2>Results</h2>
 
     <div id="compare-headline" aria-live="polite">Select two videos above to compare.</div>
+    <button type="button" class="secondary copy-link-button" id="compare-copy-link" hidden>Copy Link to This Comparison</button>
 
     <div id="compare-similarities" hidden></div>
 
@@ -94,6 +100,7 @@
 <footer>
     <p>Measures production style only. No claims of developmental harm are made.
     This dataset reflects an ongoing research pipeline — see <a href="resources.html">Resources</a> for current dataset scope and methodology.</p>
+    <p class="trust-badge">📊 Every score is a named, computationally-measured feature — never a subjective judgment call. <a href="resources.html#resources-list">See the full methodology</a>.</p>
 </footer>
 
 <script src="assets/js/data.js"></script>

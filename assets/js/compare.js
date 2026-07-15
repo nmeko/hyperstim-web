@@ -12,6 +12,7 @@ const searchA = document.getElementById("compare-a-search");
 const searchB = document.getElementById("compare-b-search");
 
 const headline = document.getElementById("compare-headline");
+const copyLinkButton = document.getElementById("compare-copy-link");
 const similaritiesBox = document.getElementById("compare-similarities");
 const videoPair = document.getElementById("compare-video-pair");
 const typeGrid = document.getElementById("compare-type-grid");
@@ -326,6 +327,17 @@ function applyDeepLinkFromHash() {
     renderComparison();
 }
 
+function updateProgress(complete) {
+    const step1 = document.getElementById("progress-step-1");
+    const step2 = document.getElementById("progress-step-2");
+    if (step1 && step2) {
+        step1.classList.toggle("active", !complete);
+        step1.classList.toggle("done", complete);
+        step2.classList.toggle("active", complete);
+    }
+    if (copyLinkButton) copyLinkButton.hidden = !complete;
+}
+
 function renderComparison() {
     const videoA = getVideo(selectA.value);
     const videoB = getVideo(selectB.value);
@@ -336,6 +348,7 @@ function renderComparison() {
         videoPair.innerHTML = "";
         typeGrid.innerHTML = "";
         if (comparisonChart) comparisonChart.innerHTML = "";
+        updateProgress(false);
         return;
     }
 
@@ -345,6 +358,7 @@ function renderComparison() {
     renderTypeGrid(videoA, videoB);
     renderComparisonChart(videoA, videoB);
     updateHashFromSelection();
+    updateProgress(true);
 }
 
 /* =========================================================

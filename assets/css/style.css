@@ -174,6 +174,16 @@ footer {
     font-size: 0.9rem;
 }
 
+.trust-badge {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
 /* =========================================================
    Hero
 ========================================================= */
@@ -310,6 +320,76 @@ button.secondary:hover {
         bottom: 0.75rem;
         padding: 0.6rem 0.9rem;
         font-size: 0.85rem;
+    }
+}
+
+/* =========================================================
+   Currently Comparing tray
+========================================================= */
+
+#compare-tray {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 950;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    padding: 0.75rem 1rem;
+}
+
+.compare-tray-inner {
+    max-width: var(--content-width);
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.compare-tray-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--surface-alt);
+    border-radius: 999px;
+    padding: 0.35rem 0.5rem 0.35rem 0.85rem;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.compare-tray-remove {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    min-width: 24px;
+    min-height: 24px;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.compare-tray-hint {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+body:has(#compare-tray) {
+    padding-bottom: 4.5rem;
+}
+
+@media (max-width: 600px) {
+    .compare-tray-inner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .compare-tray-item {
+        max-width: none;
     }
 }
 

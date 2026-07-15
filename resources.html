@@ -128,10 +128,62 @@
     </ul>
 </section>
 
+<section id="faq">
+    <h2>Common Questions</h2>
+
+    <details class="explainer">
+        <summary>Does a high score mean this video is bad for my kid?</summary>
+        <p>
+            Not on its own. A high score means the video is produced in a more intense style than
+            most of this dataset — fast cuts, sustained loud audio, frequent reward payoffs. This
+            site measures production style only; it doesn't judge educational value, age
+            appropriateness, or make any claim about developmental harm.
+        </p>
+    </details>
+
+    <details class="explainer">
+        <summary>What does "percentile" actually mean here?</summary>
+        <p>
+            A percentile of 73 means this video scores higher on that metric than 73% of the
+            videos currently in the dataset. It's a relative ranking within this specific dataset,
+            not a fixed or universal scale — a score can shift slightly as more videos are added.
+        </p>
+    </details>
+
+    <details class="explainer">
+        <summary>Why isn't my favorite video/channel in the dataset?</summary>
+        <p>
+            The dataset only includes videos the research pipeline has specifically processed — it
+            doesn't cover all of YouTube, and coverage is still growing. See "Dataset Scope" above
+            for the current count.
+        </p>
+    </details>
+
+    <details class="explainer">
+        <summary>Why does a video show "Not enough data" for some categories?</summary>
+        <p>
+            Some videos have only been partially processed by the pipeline so far — a type shows
+            "Not enough data" only for the specific metrics that haven't been measured yet, not the
+            whole video. Everything that has been measured is still a real score.
+        </p>
+    </details>
+
+    <details class="explainer">
+        <summary>Who built this and can I trust the methodology?</summary>
+        <p>
+            Every score comes from named, computationally-measured features (cut rate, loudness,
+            color shifts, and so on) — never a subjective judgment call. The full taxonomy and
+            feature list are documented above, and the data pipeline
+            (<code>scripts/build_dataset.py</code>) is openly available in the project repository.
+        </p>
+    </details>
+</section>
+
 </main>
 
 <footer>
     <p>Measures production style only. No claims of developmental harm are made.</p>
+    <p class="trust-badge">📊 Every score is a named, computationally-measured feature — never a subjective judgment call.</p>
 </footer>
 
 <script src="assets/js/data.js"></script>

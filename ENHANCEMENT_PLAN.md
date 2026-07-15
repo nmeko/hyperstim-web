@@ -59,9 +59,45 @@ Tracked step by step so nothing gets missed. Status: ✅ done · ⚠️ done dif
   Compare picker had a broken CSS selector and had never actually applied
 
 ---
-Every item above was verified with an automated functional test (Node `vm`-based DOM
-simulation) against real data shape before being marked done — not just written and assumed
-to work.
+
+# Round 2: Inspired by real products (Common Sense Media, Yuka, Wirecutter, etc.)
+
+Keeping everything already built — this is additive only. Status: ✅ done · 🔲 not started · ⏭️ deferred (reasoning below)
+
+## 9. Borrowed from Common Sense Media (closest real competitor)
+- ✅ Dot/pip scale (5 dots, some filled) next to every percentile number — instantly scannable,
+  and it's a visual language parents already know from the biggest player in this exact space
+- ✅ Trust/methodology mini-badge visible near scores site-wide, not just buried in Resources
+
+## 10. Borrowed from Yuka / nutrition labels
+- ✅ Distribution marker showing exactly where a score sits along the dataset range (a more
+  direct, honestly-scoped version of "at a glance" than a full nutrition-label redesign)
+
+## 11. Borrowed from Wirecutter / Consumer Reports
+- ✅ "Reference point" callouts on the Lookup page (e.g. a video closest to the dataset average),
+  so people who don't want to browse 189 videos have a trustworthy starting point
+- ⏭️ Comparing 3+ videos at once — deferred. This needs the matrix to go from a fixed 2-column
+  layout to a dynamic N-column one, which is a real architectural change, not an incremental
+  addition. Flagging as a good candidate for its own dedicated pass later rather than folding
+  into this batch.
+
+## 12. Borrowed from Amazon/Trustpilot review distributions
+- ✅ Distribution context — "more intense than X% of the dataset" with a simple visual marker
+  showing where a video's score sits relative to everyone else
+
+## 13. Borrowed from Spotify Wrapped / shareable cards
+- ✅ Lightweight version: a "Copy Link" button for a specific video or comparison, building on
+  the deep-linking already in place
+- ⏭️ Full downloadable/shareable image card — deferred as a stretch goal after the rest of this
+  batch, since it's the most self-contained addition (canvas-based, no dependency on other work)
+
+## 14. Wayfinding
+- ✅ Persistent "Currently Comparing" tray — add videos to a queue while browsing Lookup, jump to
+  Compare with them pre-loaded, without losing your place
+- ✅ Breadcrumb/progress indicator on the Compare page once two videos are selected
+
+## 15. Resources page
+- ✅ FAQ/glossary accordion answering likely real questions in plain language
 
 ## Pre-deployment double-check (found and fixed 2 more issues)
 
@@ -77,3 +113,18 @@ to work.
   and used-but-unstyled) — no other issues found.
 - Re-ran the full regression suite (both pages, all features together) after both fixes —
   everything still passes.
+
+
+## Round 2 verification notes
+
+Every item was tested against real functional scenarios, not just written and assumed correct:
+- Dot scale: verified exact rounding at 0/20/50/79/100% and null
+- Reference-point video: verified it's the true median *among covered videos only*, correctly
+  ignoring uncovered videos even when they're the vast majority (matches the real dataset, where
+  101 of 189 videos currently have zero coverage)
+- Compare tray: full lifecycle tested — add, cap at 2 (drops oldest), remove, clear, and the
+  click-interception on "Compare This" links (with a verified safe fallback to normal navigation
+  if the link is ever malformed)
+- Copy-link buttons: tested both the Clipboard API path and the prompt() fallback for when it's
+  unavailable
+- Full regression suite re-run on both pages after all round-2 additions — zero regressions

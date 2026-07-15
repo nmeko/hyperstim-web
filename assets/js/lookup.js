@@ -30,6 +30,17 @@ const audienceNote = document.getElementById("audience-note");
    1. Card grid rendering (shared render path for grid + single result)
 ========================================================= */
 
+// The video closest to the dataset's median composite score, among
+// videos that actually have real coverage — a trustworthy starting
+// point for someone who doesn't want to browse the whole dataset.
+// Computed once; self-adjusting if the dataset changes on a future build.
+const REFERENCE_VIDEO = (() => {
+    const covered = SITE_DATA.videos.filter(v => v.composite_percentile != null);
+    if (!covered.length) return null;
+    const sorted = covered.slice().sort((a, b) => a.composite_percentile - b.composite_percentile);
+    return sorted[Math.floor(sorted.length / 2)];
+})();
+
 function typeBreakdownHTML(video) {
     return allTypeEntries(video).map(entry => {
         const schema = TAXONOMY_SCHEMA[entry.categoryKey].types[entry.typeKey];
@@ -51,8 +62,13 @@ function typeBreakdownHTML(video) {
 
 function cardHTML(video) {
     const topic = deriveTopic(video);
+    const isReference = REFERENCE_VIDEO && video.video_id === REFERENCE_VIDEO.video_id;
+    const referenceBadge = isReference
+        ? `<div class="reference-badge">Reference Point — closest to the dataset average</div>`
+        : "";
 
     return `
+        ${referenceBadge}
         <div class="video-thumb">
             <img src="${youtubeThumbnail(video.video_id)}" alt="${video.title}" loading="lazy">
         </div>
@@ -256,6 +272,8 @@ function renderDetailsPanel(video) {
         <h3>${video.title}</h3>
         <p class="video-channel">${video.channel} &middot; ${video.era || ""}</p>
         ${compositeBadgeHTML(video)}
+        ${distributionMarkerHTML(video.composite_percentile)}
+        <button type="button" class="secondary copy-link-button">Copy Link to This Result</button>
         <div class="type-breakdown">
             ${typeBreakdownHTML(video)}
         </div>

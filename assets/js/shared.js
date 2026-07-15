@@ -123,6 +123,36 @@ function formatBand(band, percentile) {
     return `${icon}${band.label} (${Math.round(percentile)}/100)`;
 }
 
+// A 5-dot scale (Common Sense Media style) as a scannable alternative to
+// the raw number — how many of 5 dots are filled scales with percentile.
+// aria-hidden because the dots are purely decorative reinforcement; the
+// real accessible value is always the text label + number next to it.
+function dotScaleHTML(percentile) {
+    if (percentile === null || percentile === undefined || Number.isNaN(percentile)) {
+        return `<span class="dot-scale" aria-hidden="true">${"○".repeat(5)}</span>`;
+    }
+    const filled = Math.max(0, Math.min(5, Math.round(percentile / 20)));
+    return `<span class="dot-scale" aria-hidden="true">${"●".repeat(filled)}${"○".repeat(5 - filled)}</span>`;
+}
+
+// A visual marker showing where a score sits along the 0-100 dataset
+// range. Percentile already IS "beats X% of the dataset" — this just
+// gives that number a visual position instead of a bare digit.
+function distributionMarkerHTML(percentile) {
+    if (percentile === null || percentile === undefined || Number.isNaN(percentile)) {
+        return `<p class="distribution-caption">Not enough data to place this on the scale yet.</p>`;
+    }
+    const pct = Math.max(0, Math.min(100, Math.round(percentile)));
+    return `
+        <div class="distribution-marker">
+            <div class="distribution-track">
+                <div class="distribution-dot" style="left: ${pct}%;"></div>
+            </div>
+            <p class="distribution-caption">More intense than ${pct}% of videos in this dataset.</p>
+        </div>
+    `;
+}
+
 /* =========================================================
    2b. Info-icon tooltip — a small "?" that explains a score
    on hover or keyboard focus. Accessible: the explanation is
@@ -154,6 +184,7 @@ function compositeBadgeHTML(video) {
             ${formatBand(band, video.composite_percentile)}
             ${infoIconHTML(COMPOSITE_SCORE_EXPLANATION, "What does the overall score mean?")}
         </div>
+        ${dotScaleHTML(video.composite_percentile)}
     `;
 }
 
@@ -462,6 +493,137 @@ function findSimilarVideo(video) {
 }
 
 /* =========================================================
+   14. "Currently Comparing" tray — a cross-page queue (backed
+   by localStorage) of up to 2 videos to compare. Clicking a
+   "Compare This" link (built by cardHTML in lookup.js) adds to
+   this queue instead of navigating immediately, via a delegated
+   click handler below. The link's href is left intact as a
+   no-JS fallback: if JS fails for any reason, it still navigates
+   directly to a valid pre-filled Compare page, same as before
+   this feature existed.
+========================================================= */
+
+const COMPARE_QUEUE_KEY = "hyperstim_compare_queue";
+
+function getCompareQueue() {
+    try {
+        const raw = localStorage.getItem(COMPARE_QUEUE_KEY);
+        const queue = raw ? JSON.parse(raw) : [];
+        return Array.isArray(queue) ? queue : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function setCompareQueue(queue) {
+    try { localStorage.setItem(COMPARE_QUEUE_KEY, JSON.stringify(queue)); } catch (e) { /* ignore */ }
+}
+
+function addToCompareQueue(videoId) {
+    let queue = getCompareQueue();
+    if (!queue.includes(videoId)) {
+        queue = [...queue, videoId].slice(-2); // keep at most the 2 most recently added
+        setCompareQueue(queue);
+    }
+    renderCompareTray();
+}
+
+function removeFromCompareQueue(videoId) {
+    setCompareQueue(getCompareQueue().filter(id => id !== videoId));
+    renderCompareTray();
+}
+
+function renderCompareTray() {
+    const queue = getCompareQueue();
+    let tray = document.getElementById("compare-tray");
+
+    if (!queue.length) {
+        if (tray) tray.remove();
+        return;
+    }
+
+    if (!tray) {
+        tray = document.createElement("div");
+        tray.id = "compare-tray";
+        document.body.appendChild(tray);
+    }
+
+    const itemsHTML = queue.map(id => {
+        const video = typeof SITE_DATA !== "undefined" ? SITE_DATA.videos.find(v => v.video_id === id) : null;
+        const title = video ? video.title : id;
+        return `
+            <span class="compare-tray-item">
+                ${title}
+                <button type="button" class="compare-tray-remove" data-video-id="${id}" aria-label="Remove ${title} from comparison">&times;</button>
+            </span>
+        `;
+    }).join("");
+
+    const actionHTML = queue.length === 2
+        ? `<a class="secondary" href="compare.html#a=${queue[0]}&b=${queue[1]}">Compare Now</a>`
+        : `<span class="compare-tray-hint">Add one more video to compare</span>`;
+
+    tray.innerHTML = `
+        <div class="compare-tray-inner">
+            <strong>Comparing:</strong>
+            ${itemsHTML}
+            ${actionHTML}
+            <button type="button" id="compare-tray-clear" class="secondary">Clear</button>
+        </div>
+    `;
+
+    tray.querySelectorAll(".compare-tray-remove").forEach(btn => {
+        btn.addEventListener("click", () => removeFromCompareQueue(btn.dataset.videoId));
+    });
+    const clearButton = document.getElementById("compare-tray-clear");
+    if (clearButton) clearButton.addEventListener("click", () => { setCompareQueue([]); renderCompareTray(); });
+}
+
+function initCompareTray() {
+    renderCompareTray(); // show it immediately if a queue already exists from a previous page
+
+    document.addEventListener("click", e => {
+        const link = e.target.closest ? e.target.closest(".compare-link") : null;
+        if (!link) return;
+        const match = link.getAttribute("href").match(/a=([A-Za-z0-9_-]{11})/);
+        if (!match) return; // malformed href — let the default navigation happen as a safe fallback
+        e.preventDefault();
+        addToCompareQueue(match[1]);
+    });
+}
+
+/* =========================================================
+   15. Copy-link buttons — shares the current page's URL
+   (already kept in sync with the current selection via the
+   hash-based deep-linking in lookup.js/compare.js). Uses the
+   Clipboard API where available, falls back to a prompt() with
+   the URL pre-filled so it can still be copied manually.
+========================================================= */
+
+function initCopyLinkButtons() {
+    document.addEventListener("click", e => {
+        const button = e.target.closest ? e.target.closest(".copy-link-button") : null;
+        if (!button) return;
+
+        const url = location.href;
+        const originalText = button.textContent;
+
+        function showCopiedFeedback() {
+            button.textContent = "Link copied!";
+            setTimeout(() => { button.textContent = originalText; }, 2000);
+        }
+
+        if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(showCopiedFeedback).catch(() => {
+                window.prompt("Copy this link:", url);
+            });
+        } else {
+            window.prompt("Copy this link:", url);
+        }
+    });
+}
+
+/* =========================================================
    10. Back-to-top button — injected once, shown after the
    user has scrolled past roughly one screen's worth of content.
 ========================================================= */
@@ -555,6 +717,8 @@ document.addEventListener("DOMContentLoaded", () => {
     initBackToTop();
     initOnboarding();
     initVideoRetryHandlers();
+    initCompareTray();
+    initCopyLinkButtons();
 });
 
 window.addEventListener("resize", () => {
