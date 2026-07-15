@@ -44,8 +44,14 @@ def check_video(video_id):
                 payload = json.load(resp)
                 return "live", payload.get("title")
     except urllib.error.HTTPError as e:
-        if e.code in (401, 404):
-            return "unavailable", None
+        # YouTube's oEmbed endpoint isn't perfectly consistent about this, but
+        # in practice: 401 usually means private/restricted, 404 usually means
+        # deleted/never existed. Treat both as "unavailable" for site logic,
+        # but keep the distinction so the fallback message can be specific.
+        if e.code == 401:
+            return "unavailable", "private"
+        if e.code == 404:
+            return "unavailable", "removed"
         return f"error ({e.code})", None
     except Exception as e:
         return f"error ({e})", None
@@ -58,8 +64,16 @@ def main():
 
     results = []
     for i, (vid, title) in enumerate(videos, 1):
-        status, live_title = check_video(vid)
-        results.append({"video_id": vid, "manifest_title": title, "status": status, "youtube_title": live_title})
+        status, extra = check_video(vid)
+        youtube_title = extra if status == "live" else None
+        reason = extra if status == "unavailable" else None
+        results.append({
+            "video_id": vid,
+            "manifest_title": title,
+            "status": status,
+            "youtube_title": youtube_title,
+            "reason": reason,
+        })
         marker = "OK  " if status == "live" else "GONE"
         print(f"[{i}/{len(videos)}] {marker} {vid}  {title[:50]}")
         time.sleep(0.2)  # be polite to the endpoint
@@ -79,7 +93,8 @@ def main():
     if dead:
         print("\nUnavailable video IDs:")
         for r in dead:
-            print(f"  {r['video_id']}  ({r['manifest_title']})")
+            reason_note = f" — {r['reason']}" if r["reason"] else ""
+            print(f"  {r['video_id']}  ({r['manifest_title']}){reason_note}")
 
 
 if __name__ == "__main__":

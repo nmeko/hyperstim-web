@@ -37,6 +37,7 @@ import json
 import os
 import statistics
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 # ---------------------------------------------------------------------
@@ -401,6 +402,7 @@ def write_data_js(videos, out_path, coverage, source_label="github:AISmithLab/Hy
         "fully_scored_count": coverage["complete"],
         "partially_scored_count": coverage["partial"],
         "note": note,
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     if full_corpus_size:
         meta["full_corpus_size"] = full_corpus_size
@@ -417,6 +419,37 @@ def write_data_js(videos, out_path, coverage, source_label="github:AISmithLab/Hy
 # ---------------------------------------------------------------------
 # 8. Sanity check (mirrors the verification snippet in the build guide)
 # ---------------------------------------------------------------------
+
+def apply_availability_report(videos, report_path):
+    if not report_path.exists():
+        print(f"No availability report at {report_path} — run scripts/check_availability.py first "
+              f"if you want dead videos to show a graceful fallback instead of a broken embed. "
+              f"Skipping for now; every video defaults to available=true.")
+        return
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    info_by_id = {r["video_id"]: r for r in report}
+
+    marked_dead = 0
+    for v in videos:
+        entry = info_by_id.get(v["video_id"])
+        if entry and entry.get("status") == "unavailable":
+            v["available"] = False
+            # Older reports (before the private/removed distinction existed)
+            # won't have a "reason" key — .get() handles that gracefully,
+            # and the site falls back to a generic message when it's absent.
+            reason = entry.get("reason")
+            if reason:
+                v["unavailable_reason"] = reason
+            marked_dead += 1
+        # "live", "error (...)", or not-checked-yet all default to
+        # available (a transient network error shouldn't hide a video
+        # that's probably actually fine — rerun check_availability.py
+        # to resolve those rather than treating them as dead).
+
+    print(f"Applied availability report: {marked_dead} video(s) marked unavailable "
+          f"(will show a fallback instead of an embed).")
+
 
 def sanity_check(videos):
     missing = 0
@@ -456,6 +489,12 @@ def main():
     parser.add_argument("--full-corpus-size", type=int, default=None,
                          help="Optional: the research pipeline's eventual target video count, if known. "
                               "Omit this if you don't have a real target number — the script will not guess one.")
+    parser.add_argument("--availability-report", type=Path,
+                         default=Path(__file__).resolve().parent / "availability_report.json",
+                         help="Path to check_availability.py's output. If it exists, videos it found "
+                              "removed/private/region-locked get available=false, so the site shows a "
+                              "graceful message instead of a broken embed. Safe to omit if you haven't "
+                              "run check_availability.py yet — every video defaults to available=true.")
     args = parser.parse_args()
 
     data_dir = discover_repo_files(args.repo)
@@ -478,6 +517,8 @@ def main():
 
     if args.youtube_api_key:
         videos = enrich_with_youtube_api(videos, args.youtube_api_key)
+
+    apply_availability_report(videos, args.availability_report)
 
     coverage = sanity_check(videos)
     write_data_js(videos, args.out, coverage, full_corpus_size=args.full_corpus_size)

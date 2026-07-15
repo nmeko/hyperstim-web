@@ -108,18 +108,62 @@ const FEATURE_INDEX = (() => {
 
 function bandFor(percentile) {
     if (percentile === null || percentile === undefined || Number.isNaN(percentile)) {
-        return { label: "Not enough data", class: "unknown" };
+        return { label: "Not enough data", class: "unknown", icon: "○" };
     }
-    if (percentile < 40) return { label: "Good", class: "good" };
-    if (percentile < 70) return { label: "Moderate", class: "moderate" };
-    return { label: "Extremely High", class: "extreme" };
+    if (percentile < 40) return { label: "Good", class: "good", icon: "●" };
+    if (percentile < 70) return { label: "Moderate", class: "moderate", icon: "▲" };
+    return { label: "Extremely High", class: "extreme", icon: "■" };
 }
 
 function formatBand(band, percentile) {
+    const icon = `<span class="band-icon" aria-hidden="true">${band.icon}</span>`;
     if (percentile === null || percentile === undefined || Number.isNaN(percentile)) {
-        return band.label;
+        return `${icon}${band.label}`;
     }
-    return `${band.label} (${Math.round(percentile)}/100)`;
+    return `${icon}${band.label} (${Math.round(percentile)}/100)`;
+}
+
+/* =========================================================
+   2b. Info-icon tooltip — a small "?" that explains a score
+   on hover or keyboard focus. Accessible: the explanation is
+   real DOM text (not a title attribute, which is unreliable
+   for touch/keyboard), and the icon itself is a focusable,
+   labeled element.
+========================================================= */
+
+function infoIconHTML(explanationText, ariaLabel = "What does this score mean?") {
+    return `
+        <span class="info-icon" tabindex="0" role="button" aria-label="${ariaLabel}">
+            <span aria-hidden="true">?</span>
+            <span class="info-tooltip" role="tooltip">${explanationText}</span>
+        </span>
+    `;
+}
+
+const COMPOSITE_SCORE_EXPLANATION =
+    "The overall score is the average of the Pacing, Recovery, and Reward category scores, " +
+    "ranked relative to every other video in this dataset — not an absolute or medical scale.";
+
+// The composite/overall score badge, with its explanation tooltip built in.
+// Used everywhere a video's top-level score badge appears, so the
+// explanation and markup stay consistent instead of being copy-pasted.
+function compositeBadgeHTML(video) {
+    const band = bandFor(video.composite_percentile);
+    return `
+        <div class="rating-badge rating-${band.class}">
+            ${formatBand(band, video.composite_percentile)}
+            ${infoIconHTML(COMPOSITE_SCORE_EXPLANATION, "What does the overall score mean?")}
+        </div>
+    `;
+}
+
+// A single "Category: Band (score)" line with an info icon explaining
+// that category, for compact contexts like the card grid's score list.
+function categoryScoreLineHTML(video, categoryKey) {
+    const pct = categoryPercentile(video, categoryKey);
+    const band = bandFor(pct);
+    const schema = TAXONOMY_SCHEMA[categoryKey];
+    return `<li>${schema.short}: ${formatBand(band, pct)} ${infoIconHTML(schema.intro, `What does ${schema.label} mean?`)}</li>`;
 }
 
 /* =========================================================
@@ -149,6 +193,46 @@ function youtubeId(raw) {
 
 function youtubeThumbnail(videoId) {
     return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+}
+
+// Single source of truth for embedding a video anywhere on the site.
+// If build_dataset.py's --availability-report found this video removed/
+// private/region-locked, show a graceful placeholder instead of a
+// broken iframe. `video.available` is only present after that step has
+// been run at least once; videos never checked are treated as available.
+const UNAVAILABLE_REASON_MESSAGES = {
+    private: "This video was made private by its uploader after it was scored.",
+    removed: "This video was removed from YouTube after it was scored.",
+};
+
+function videoEmbedHTML(video) {
+    if (video.available === false) {
+        const reasonText = UNAVAILABLE_REASON_MESSAGES[video.unavailable_reason]
+            || "This video was scored before it became unavailable on YouTube (removed, made private, or region-locked).";
+        return `
+            <div class="video-unavailable">
+                <img src="${youtubeThumbnail(video.video_id)}" alt="" loading="lazy">
+                <p><strong>Original video no longer publicly available</strong></p>
+                <p>${reasonText} The measurements below are still real — they just can't be replayed here.</p>
+                <button
+                    type="button"
+                    class="retry-video-button secondary"
+                    data-video-id="${video.video_id}"
+                    data-title="${video.title}">
+                    Try Again
+                </button>
+            </div>
+        `;
+    }
+
+    return `
+        <iframe
+            src="https://www.youtube.com/embed/${video.video_id}"
+            title="Preview: ${video.title}"
+            loading="lazy"
+            allowfullscreen>
+        </iframe>
+    `;
 }
 
 /* =========================================================
@@ -199,6 +283,14 @@ function allTypeEntries(video) {
     return entries;
 }
 
+// How many of the 10 pattern types have a real (non-null) percentile for
+// this video, out of 10. Used anywhere we want to prefer well-covered
+// videos over ones the pipeline hasn't fully processed yet — this number
+// rises on its own as coverage improves, so callers never need updating.
+function typeCoverageCount(video) {
+    return allTypeEntries(video).filter(e => e.percentile != null).length;
+}
+
 /* =========================================================
    6. Accessibility bar controller — shared across every page.
    Expects: #text-smaller, #text-reset, #text-larger, #contrast-toggle
@@ -220,6 +312,10 @@ function initAccessibilityBar() {
 
     function applyFontSize() {
         html.style.fontSize = `${currentFontSize}px`;
+        // Font-size changes the sticky header's actual rendered height
+        // (toolbar buttons and nav text both scale) — remeasure so
+        // anything offset below it (like a sticky panel) stays correct.
+        requestAnimationFrame(updateStickyHeaderOffset);
     }
 
     if (larger) {
@@ -251,6 +347,141 @@ function initAccessibilityBar() {
         });
         contrast.setAttribute("aria-pressed", "false");
     }
+}
+
+// Measures the actual rendered height of the sticky header (accessibility
+// toolbar + nav together) and exposes it as --sticky-header-height, so any
+// element that needs to sit just below the sticky header (without being
+// covered by it) can use that instead of a hardcoded guess that breaks the
+// moment font size, window width, or the header's contents change.
+function updateStickyHeaderOffset() {
+    const header = document.getElementById("site-header");
+    if (!header) return;
+    document.documentElement.style.setProperty("--sticky-header-height", `${header.offsetHeight}px`);
+}
+
+/* =========================================================
+   11. First-visit onboarding walkthrough
+========================================================= */
+
+const ONBOARDING_KEY = "hyperstim_onboarding_dismissed";
+
+function initOnboarding() {
+    let alreadySeen = false;
+    try {
+        alreadySeen = !!localStorage.getItem(ONBOARDING_KEY);
+    } catch (e) {
+        // localStorage can throw in some privacy modes — just skip onboarding
+        // rather than breaking the page.
+        return;
+    }
+    if (alreadySeen) return;
+
+    const overlay = document.createElement("div");
+    overlay.className = "onboarding-overlay";
+    overlay.innerHTML = `
+        <div class="onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+            <h2 id="onboarding-title">Welcome to the HyperStim Video Audit</h2>
+            <p>This site measures production-intensity patterns in children's videos across three categories:</p>
+            <ul class="onboarding-categories">
+                <li><strong>Pacing Intensification</strong> — how fast the video moves visually.</li>
+                <li><strong>Recovery Denial</strong> — how rarely it lets a viewer calm back down.</li>
+                <li><strong>Reward Patterning</strong> — how often it sets up a small payoff.</li>
+            </ul>
+            <p>Every score is a band, shown with both a color and a shape (so it still reads without color):</p>
+            <ul class="band-key">
+                <li><span class="rating-badge rating-good"><span class="band-icon" aria-hidden="true">●</span>Good</span></li>
+                <li><span class="rating-badge rating-moderate"><span class="band-icon" aria-hidden="true">▲</span>Moderate</span></li>
+                <li><span class="rating-badge rating-extreme"><span class="band-icon" aria-hidden="true">■</span>Extremely High</span></li>
+            </ul>
+            <p class="disclaimer">Scores are relative to this dataset, not an absolute or medical scale.</p>
+            <button type="button" id="onboarding-dismiss">Got it, let's go</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const dismissButton = overlay.querySelector ? overlay.querySelector("#onboarding-dismiss") : null;
+    const releaseFocusTrap = trapFocus(overlay);
+    if (dismissButton) dismissButton.focus();
+
+    function dismiss() {
+        try { localStorage.setItem(ONBOARDING_KEY, "1"); } catch (e) { /* ignore */ }
+        releaseFocusTrap();
+        overlay.remove();
+    }
+
+    if (dismissButton) dismissButton.addEventListener("click", dismiss);
+    overlay.addEventListener("click", e => { if (e.target === overlay) dismiss(); });
+    document.addEventListener("keydown", function escHandler(e) {
+        if (e.key === "Escape" && document.body.contains(overlay)) {
+            dismiss();
+            document.removeEventListener("keydown", escHandler);
+        }
+    });
+}
+
+/* =========================================================
+   12. Video-unavailable "Try again" retry handler — delegated
+   once on document so it works on every page without each
+   page needing its own listener.
+========================================================= */
+
+function initVideoRetryHandlers() {
+    document.addEventListener("click", e => {
+        const button = e.target.closest ? e.target.closest(".retry-video-button") : null;
+        if (!button) return;
+        const container = button.closest(".video-unavailable");
+        if (!container) return;
+        const videoId = button.dataset.videoId;
+        const title = button.dataset.title || "";
+        container.outerHTML = `
+            <iframe
+                src="https://www.youtube.com/embed/${videoId}"
+                title="Preview: ${title}"
+                loading="lazy"
+                allowfullscreen>
+            </iframe>
+        `;
+    });
+}
+
+/* =========================================================
+   13. Find a related video — same topic, preferring a
+   different era (surfaces generational comparisons), for the
+   "compare with a similar video" suggestion on the Lookup page.
+========================================================= */
+
+function findSimilarVideo(video) {
+    const topic = deriveTopic(video);
+    const sameTopic = SITE_DATA.videos.filter(v => v.video_id !== video.video_id && deriveTopic(v) === topic);
+    if (!sameTopic.length) return null;
+
+    const differentEra = sameTopic.filter(v => v.era !== video.era);
+    const pool = differentEra.length ? differentEra : sameTopic;
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/* =========================================================
+   10. Back-to-top button — injected once, shown after the
+   user has scrolled past roughly one screen's worth of content.
+========================================================= */
+
+function initBackToTop() {
+    const button = document.createElement("button");
+    button.id = "back-to-top";
+    button.type = "button";
+    button.setAttribute("aria-label", "Back to top");
+    button.hidden = true;
+    button.innerHTML = "&uarr; Top";
+    document.body.appendChild(button);
+
+    button.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    window.addEventListener("scroll", () => {
+        button.hidden = window.scrollY < 500;
+    });
 }
 
 /* =========================================================
@@ -320,4 +551,12 @@ function trapFocus(container) {
 document.addEventListener("DOMContentLoaded", () => {
     initAccessibilityBar();
     initScrollReveal();
+    updateStickyHeaderOffset();
+    initBackToTop();
+    initOnboarding();
+    initVideoRetryHandlers();
+});
+
+window.addEventListener("resize", () => {
+    updateStickyHeaderOffset();
 });

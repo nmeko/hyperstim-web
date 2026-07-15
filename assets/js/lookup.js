@@ -50,22 +50,65 @@ function typeBreakdownHTML(video) {
 }
 
 function cardHTML(video) {
-    const band = bandFor(video.composite_percentile);
     const topic = deriveTopic(video);
 
     return `
-        <img src="${youtubeThumbnail(video.video_id)}" alt="${video.title}" loading="lazy">
+        <div class="video-thumb">
+            <img src="${youtubeThumbnail(video.video_id)}" alt="${video.title}" loading="lazy">
+        </div>
         <h3>${video.title}</h3>
         <p class="video-channel">${video.channel}</p>
         <p class="video-category">${topic} &middot; ${video.era || ""}</p>
-        <div class="rating-badge rating-${band.class}">${formatBand(band, video.composite_percentile)}</div>
+        ${compositeBadgeHTML(video)}
         <ul class="score-list">
-            <li>Pacing: ${formatBand(bandFor(categoryPercentile(video, "pacing_intensification")), categoryPercentile(video, "pacing_intensification"))}</li>
-            <li>Recovery: ${formatBand(bandFor(categoryPercentile(video, "recovery_denial")), categoryPercentile(video, "recovery_denial"))}</li>
-            <li>Reward: ${formatBand(bandFor(categoryPercentile(video, "reward_patterning")), categoryPercentile(video, "reward_patterning"))}</li>
+            ${categoryScoreLineHTML(video, "pacing_intensification")}
+            ${categoryScoreLineHTML(video, "recovery_denial")}
+            ${categoryScoreLineHTML(video, "reward_patterning")}
         </ul>
-        <button class="details-button" type="button" data-video="${video.video_id}">View Full Details</button>
+        <div class="card-actions">
+            <button class="details-button" type="button" data-video="${video.video_id}">View Full Details</button>
+            <a class="secondary compare-link" href="compare.html#a=${video.video_id}">Compare This</a>
+        </div>
     `;
+}
+
+// Hover-to-preview: after a short pause hovering a card's thumbnail, swap
+// the static image for a small muted autoplay preview. Only one preview
+// plays at a time (mouseleave tears it down), and this is skipped entirely
+// for unavailable videos or when the user prefers reduced motion.
+function attachHoverPreview(cardEl, video) {
+    if (video.available === false) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const thumb = cardEl.querySelector ? cardEl.querySelector(".video-thumb") : null;
+    const img = cardEl.querySelector ? cardEl.querySelector(".video-thumb img") : null;
+    if (!thumb || !img) return;
+
+    let hoverTimer = null;
+    let previewFrame = null;
+
+    cardEl.addEventListener("mouseenter", () => {
+        hoverTimer = setTimeout(() => {
+            if (previewFrame) return;
+            previewFrame = document.createElement("iframe");
+            previewFrame.src = `https://www.youtube.com/embed/${video.video_id}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1`;
+            previewFrame.className = "card-hover-preview";
+            previewFrame.tabIndex = -1;
+            previewFrame.setAttribute("aria-hidden", "true");
+            previewFrame.setAttribute("allow", "autoplay");
+            thumb.appendChild(previewFrame);
+            img.style.visibility = "hidden";
+        }, 500);
+    });
+
+    cardEl.addEventListener("mouseleave", () => {
+        clearTimeout(hoverTimer);
+        if (previewFrame) {
+            previewFrame.remove();
+            previewFrame = null;
+            img.style.visibility = "";
+        }
+    });
 }
 
 function renderCards(videos) {
@@ -86,6 +129,7 @@ function renderCards(videos) {
             card.className = "video-card";
             card.innerHTML = cardHTML(video);
             grid.appendChild(card);
+            attachHoverPreview(card, video);
         });
     }
 
@@ -169,14 +213,7 @@ function renderVideoPanel(video, notFoundQuery) {
         return;
     }
 
-    videoContainer.innerHTML = `
-        <iframe
-            src="https://www.youtube.com/embed/${video.video_id}"
-            title="Preview: ${video.title}"
-            loading="lazy"
-            allowfullscreen>
-        </iframe>
-    `;
+    videoContainer.innerHTML = videoEmbedHTML(video);
 
     ratingContainer.innerHTML = `
         <div class="type-breakdown">
@@ -203,15 +240,26 @@ function renderDetailsPanel(video) {
         return;
     }
 
-    const band = bandFor(video.composite_percentile);
+    const similar = findSimilarVideo(video);
+    const similarHTML = similar
+        ? `
+            <div class="similar-suggestion">
+                <p>See how this compares to a similar video:</p>
+                <a class="secondary" href="compare.html#a=${video.video_id}&b=${similar.video_id}">
+                    Compare with "${similar.title}" (${similar.era || "Contemporary"})
+                </a>
+            </div>
+          `
+        : "";
 
     detailsPanel.innerHTML = `
         <h3>${video.title}</h3>
         <p class="video-channel">${video.channel} &middot; ${video.era || ""}</p>
-        <div class="rating-badge rating-${band.class}">${formatBand(band, video.composite_percentile)}</div>
+        ${compositeBadgeHTML(video)}
         <div class="type-breakdown">
             ${typeBreakdownHTML(video)}
         </div>
+        ${similarHTML}
     `;
 }
 

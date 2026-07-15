@@ -14,6 +14,7 @@
 
 <body>
 
+<div id="site-header">
 <div id="accessibility-toolbar">
     <button id="text-smaller" aria-label="Decrease text size">A-</button>
     <button id="text-reset" aria-label="Reset text size">A</button>
@@ -33,6 +34,7 @@
         </ul>
     </nav>
 </header>
+</div>
 
 <main id="main-content">
 
@@ -93,17 +95,21 @@
         data. It is not part of the core, content-independent taxonomy above and is not used in the
         headline scores on this site.
     </p>
+
+    <h3>At a Glance</h3>
+    <div id="taxonomy-diagram" class="taxonomy-diagram"></div>
 </section>
 
 <section id="dataset-scope">
     <h2>Dataset Scope</h2>
     <p>
         <span id="dataset-scope-text">
-            This site currently reflects a small pilot sample from an ongoing research pipeline,
-            not the full research corpus. Exact counts are shown live from the current dataset below.
+            This site reflects videos scored so far by an ongoing research pipeline, not
+            necessarily its full eventual scope. Exact, live counts are shown below.
         </span>
     </p>
     <p id="dataset-scope-numbers" aria-live="polite"></p>
+    <p id="dataset-last-updated" class="disclaimer"></p>
     <p>
         The dataset is produced by a separate measurement pipeline (ffmpeg/OpenCV feature
         extraction) and joined/percentile-ranked by <code>scripts/build_dataset.py</code>. This
@@ -131,6 +137,31 @@
 <script src="assets/js/data.js"></script>
 <script src="assets/js/shared.js"></script>
 <script>
+    function renderTaxonomyDiagram() {
+        const el = document.getElementById("taxonomy-diagram");
+        if (!el || typeof TAXONOMY_SCHEMA === "undefined") return;
+
+        el.innerHTML = Object.values(TAXONOMY_SCHEMA).map(category => `
+            <div class="taxonomy-column">
+                <h4>${category.label}</h4>
+                <p>${category.intro}</p>
+                <ul>
+                    ${Object.values(category.types).map(t => `<li>${t.label}</li>`).join("")}
+                </ul>
+            </div>
+        `).join("");
+    }
+
+    function renderLastUpdated() {
+        const el = document.getElementById("dataset-last-updated");
+        if (!el || typeof SITE_DATA === "undefined") return;
+        const generatedAt = SITE_DATA.meta && SITE_DATA.meta.generated_at;
+        if (!generatedAt) return;
+        const date = new Date(generatedAt);
+        if (isNaN(date.getTime())) return;
+        el.textContent = `Data last rebuilt: ${date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}.`;
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         const el = document.getElementById("dataset-scope-numbers");
         if (el && typeof SITE_DATA !== "undefined") {
@@ -145,6 +176,8 @@
             }
             el.textContent = text;
         }
+        renderTaxonomyDiagram();
+        renderLastUpdated();
     });
 </script>
 

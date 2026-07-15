@@ -2,15 +2,18 @@
    Accessibility Toolbar
 ========================================================= */
 
-#accessibility-toolbar {
+#site-header {
     position: sticky;
     top: 0;
+    z-index: 1000;
+}
+
+#accessibility-toolbar {
     display: flex;
     gap: 0.5rem;
     padding: 0.75rem;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    z-index: 1000;
 }
 
 #accessibility-toolbar button {
@@ -37,8 +40,9 @@
 ========================================================= */
 
 html[data-contrast="high"] .video-card,
-html[data-contrast="high"] .compare-card,
+html[data-contrast="high"] .matrix-video-cell,
 html[data-contrast="high"] .not-found,
+html[data-contrast="high"] .video-unavailable,
 html[data-contrast="high"] #details-panel {
     border-width: 2px;
 }

@@ -14,6 +14,7 @@
 
 <body>
 
+<div id="site-header">
 <div id="accessibility-toolbar">
     <button id="text-smaller" aria-label="Decrease text size">A-</button>
     <button id="text-reset" aria-label="Reset text size">A</button>
@@ -33,30 +34,37 @@
         </ul>
     </nav>
 </header>
+</div>
 
 <main id="main-content">
 
 <section id="compare-picker">
     <h2>Compare Two Videos</h2>
     <p>
-        Pick any two videos from the dataset. Scores are relative to this dataset sample — see
+        Use the two dropdowns below to compare <strong>any two videos in the dataset</strong> —
+        they're not limited to the preset example. Type to filter either list, or paste a YouTube
+        link directly. Scores are relative to this dataset sample — see
         <a href="index.html">how to read these scores</a>.
     </p>
 
     <div class="compare-selects">
         <label class="video-a">
             Video A
+            <input type="text" id="compare-a-search" placeholder="Search, or paste a YouTube link…" autocomplete="off">
             <select id="compare-a"><option value="">Select a video…</option></select>
         </label>
 
+        <button id="compare-swap" type="button" class="secondary icon-button" aria-label="Swap Video A and Video B">⇄</button>
+
         <label class="video-b">
             Video B
+            <input type="text" id="compare-b-search" placeholder="Search, or paste a YouTube link…" autocomplete="off">
             <select id="compare-b"><option value="">Select a video…</option></select>
         </label>
     </div>
 
     <button id="compare-preset" type="button" class="secondary">
-        Show a representative historical vs. contemporary comparison
+        Show a random historical vs. contemporary example
     </button>
 </section>
 
@@ -73,13 +81,19 @@
             <div class="compare-type-grid" id="compare-type-grid"></div>
         </div>
     </div>
+    <p class="swipe-hint" aria-hidden="true">&larr; Swipe to see both videos &rarr;</p>
+
+    <div id="compare-radar-section">
+        <h3>Visual Comparison</h3>
+        <div id="compare-radar-chart"></div>
+    </div>
 </section>
 
 </main>
 
 <footer>
     <p>Measures production style only. No claims of developmental harm are made.
-    This is a pilot sample — see <a href="resources.html">Resources</a> for dataset scope and methodology.</p>
+    This dataset reflects an ongoing research pipeline — see <a href="resources.html">Resources</a> for current dataset scope and methodology.</p>
 </footer>
 
 <script src="assets/js/data.js"></script>

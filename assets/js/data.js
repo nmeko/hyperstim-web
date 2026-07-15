@@ -8,7 +8,8 @@ const SITE_DATA = {
         "dataset_size": 189,
         "fully_scored_count": 49,
         "partially_scored_count": 140,
-        "note": "This site reflects 189 videos from the research pipeline: 49 fully scored across all 10 pattern types, 140 with partial coverage (missing types show 'Not enough data')."
+        "note": "This site reflects 189 videos from the research pipeline: 49 fully scored across all 10 pattern types, 140 with partial coverage (missing types show 'Not enough data').",
+        "generated_at": "2026-07-15T21:34:25+00:00"
     },
     "videos": [
         {
@@ -1569,7 +1570,8 @@ const SITE_DATA = {
                         }
                     }
                 }
-            }
+            },
+            "available": false
         },
         {
             "video_id": "WJQJQrbsuIE",
@@ -1699,7 +1701,8 @@ const SITE_DATA = {
                         }
                     }
                 }
-            }
+            },
+            "available": false
         },
         {
             "video_id": "W1TBRU9tVfs",
@@ -6509,7 +6512,8 @@ const SITE_DATA = {
                         }
                     }
                 }
-            }
+            },
+            "available": false
         },
         {
             "video_id": "lf1YFo3o_Tw",
@@ -12229,7 +12233,8 @@ const SITE_DATA = {
                         }
                     }
                 }
-            }
+            },
+            "available": false
         },
         {
             "video_id": "ed5sac4OLbI",
@@ -12489,7 +12494,8 @@ const SITE_DATA = {
                         }
                     }
                 }
-            }
+            },
+            "available": false
         },
         {
             "video_id": "MBqzNF5pdBs",
@@ -12619,7 +12625,8 @@ const SITE_DATA = {
                         }
                     }
                 }
-            }
+            },
+            "available": false
         },
         {
             "video_id": "lPeAo1hz8GA",
@@ -17429,7 +17436,8 @@ const SITE_DATA = {
                         }
                     }
                 }
-            }
+            },
+            "available": false
         },
         {
             "video_id": "dsR0h50BiFQ",
@@ -23929,7 +23937,8 @@ const SITE_DATA = {
                         }
                     }
                 }
-            }
+            },
+            "available": false
         },
         {
             "video_id": "7nKBKPcycFE",
