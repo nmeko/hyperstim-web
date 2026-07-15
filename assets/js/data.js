@@ -9,7 +9,7 @@ const SITE_DATA = {
         "fully_scored_count": 49,
         "partially_scored_count": 140,
         "note": "This site reflects 189 videos from the research pipeline: 49 fully scored across all 10 pattern types, 140 with partial coverage (missing types show 'Not enough data').",
-        "generated_at": "2026-07-15T21:34:25+00:00"
+        "generated_at": "2026-07-15T21:57:48+00:00"
     },
     "videos": [
         {

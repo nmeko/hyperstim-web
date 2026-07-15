@@ -15,7 +15,7 @@ const headline = document.getElementById("compare-headline");
 const similaritiesBox = document.getElementById("compare-similarities");
 const videoPair = document.getElementById("compare-video-pair");
 const typeGrid = document.getElementById("compare-type-grid");
-const radarChart = document.getElementById("compare-radar-chart");
+const comparisonChart = document.getElementById("compare-chart");
 
 const SIMILARITY_THRESHOLD = 8; // percentile points
 
@@ -253,19 +253,17 @@ function renderTypeGrid(videoA, videoB) {
 }
 
 /* =========================================================
-   2b. Radar chart — visual summary of both videos across all
-   10 pattern types, with an accessible hidden data table
-   carrying the same numbers for screen readers.
+   2b. Comparison bar chart — a compact, all-in-one-glance
+   summary of both videos across all 10 pattern types. Reuses
+   meterRow() (the same bar component already used per-row in
+   the matrix above), so it's visually consistent and doesn't
+   need a separate accessible-alternative table — the bars are
+   real text-containing DOM elements, not an image needing a
+   workaround for screen readers.
 ========================================================= */
 
-function polarPoint(index, total, radiusFraction, cx, cy, maxRadius) {
-    const angle = (Math.PI * 2 * index) / total - Math.PI / 2; // start at 12 o'clock
-    const r = Math.max(0, radiusFraction) * maxRadius;
-    return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
-}
-
-function renderRadarChart(videoA, videoB) {
-    if (!radarChart) return;
+function renderComparisonChart(videoA, videoB) {
+    if (!comparisonChart) return;
 
     const entriesA = allTypeEntries(videoA);
     const entriesB = allTypeEntries(videoB);
@@ -275,59 +273,26 @@ function renderRadarChart(videoA, videoB) {
     const coveredB = pairs.filter(p => p.b.percentile != null).length;
 
     if (coveredA < 3 || coveredB < 3) {
-        radarChart.innerHTML = `<p class="panel-placeholder">Not enough measured data on one or both videos yet for a visual chart — see the table above for what is measured.</p>`;
+        comparisonChart.innerHTML = `<p class="panel-placeholder">Not enough measured data on one or both videos yet for a chart — see the table above for what is measured.</p>`;
         return;
     }
 
-    const size = 340, cx = size / 2, cy = size / 2, maxRadius = size / 2 - 55;
-    const total = pairs.length;
-
-    const gridRings = [0.25, 0.5, 0.75, 1].map(f => {
-        const pts = pairs.map((_, i) => polarPoint(i, total, f, cx, cy, maxRadius).join(",")).join(" ");
-        return `<polygon points="${pts}" fill="none" stroke="var(--border)" stroke-width="1" />`;
-    }).join("");
-
-    const axisLines = pairs.map((_, i) => {
-        const [x, y] = polarPoint(i, total, 1, cx, cy, maxRadius);
-        return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--border)" stroke-width="1" />`;
-    }).join("");
-
-    const labels = pairs.map((p, i) => {
-        const [x, y] = polarPoint(i, total, 1.2, cx, cy, maxRadius);
+    const rows = pairs.map(p => {
         const schema = TAXONOMY_SCHEMA[p.a.categoryKey].types[p.a.typeKey];
-        const shortLabel = schema.label.split(" ")[0];
-        return `<text x="${x}" y="${y}" font-size="9" fill="var(--muted)" text-anchor="middle" dominant-baseline="middle">${shortLabel}</text>`;
+        return `
+            <div class="chart-bar-group">
+                <div class="chart-bar-label">${schema.label}</div>
+                ${meterRow("Video A", p.a.percentile, "a")}
+                ${meterRow("Video B", p.b.percentile, "b")}
+            </div>
+        `;
     }).join("");
 
-    const polyA = pairs.map((p, i) => polarPoint(i, total, (p.a.percentile ?? 0) / 100, cx, cy, maxRadius).join(",")).join(" ");
-    const polyB = pairs.map((p, i) => polarPoint(i, total, (p.b.percentile ?? 0) / 100, cx, cy, maxRadius).join(",")).join(" ");
-
-    const hiddenTable = `
-        <table class="sr-only">
-            <caption>Radar chart data: percentile score per pattern type</caption>
-            <thead><tr><th scope="col">Pattern type</th><th scope="col">Video A</th><th scope="col">Video B</th></tr></thead>
-            <tbody>
-                ${pairs.map(p => {
-                    const label = TAXONOMY_SCHEMA[p.a.categoryKey].types[p.a.typeKey].label;
-                    return `<tr><td>${label}</td><td>${p.a.percentile ?? "Not enough data"}</td><td>${p.b.percentile ?? "Not enough data"}</td></tr>`;
-                }).join("")}
-            </tbody>
-        </table>
-    `;
-
-    radarChart.innerHTML = `
-        <svg viewBox="0 0 ${size} ${size}" class="radar-chart" role="img"
-             aria-label="Radar chart comparing Video A and Video B across all measured pattern types">
-            ${gridRings}
-            ${axisLines}
-            ${labels}
-            <polygon points="${polyA}" fill="var(--accent-a)" fill-opacity="0.25" stroke="var(--accent-a)" stroke-width="2" />
-            <polygon points="${polyB}" fill="var(--accent-b)" fill-opacity="0.25" stroke="var(--accent-b)" stroke-width="2" />
-        </svg>
-        ${hiddenTable}
+    comparisonChart.innerHTML = `
+        <div class="bar-chart">${rows}</div>
         <p class="era-note">
-            Shape shows each video's intensity profile — the further a point sits from the center, the higher that
-            metric scored. Metrics without enough data are plotted at the center. Exact numbers are in the table above.
+            Each pair of bars shows both videos' percentile score on that metric — the longer the bar,
+            the more intense that video scored relative to the rest of the dataset.
         </p>
     `;
 }
@@ -370,7 +335,7 @@ function renderComparison() {
         similaritiesBox.hidden = true;
         videoPair.innerHTML = "";
         typeGrid.innerHTML = "";
-        if (radarChart) radarChart.innerHTML = "";
+        if (comparisonChart) comparisonChart.innerHTML = "";
         return;
     }
 
@@ -378,7 +343,7 @@ function renderComparison() {
     renderSimilarities(videoA, videoB);
     renderVideoPair(videoA, videoB);
     renderTypeGrid(videoA, videoB);
-    renderRadarChart(videoA, videoB);
+    renderComparisonChart(videoA, videoB);
     updateHashFromSelection();
 }
 

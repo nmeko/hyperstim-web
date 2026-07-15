@@ -497,24 +497,36 @@ iframe {
 }
 
 /* =========================================================
-   Radar chart
+   Comparison bar chart
 ========================================================= */
 
 #compare-radar-section {
     margin-top: 2rem;
 }
 
-#compare-radar-chart {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+#compare-chart {
+    max-width: 600px;
+    margin: 0 auto;
 }
 
-.radar-chart {
-    width: 100%;
-    max-width: 400px;
-    height: auto;
+.bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    text-align: left;
+}
+
+.chart-bar-group {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1rem;
+    background: var(--surface);
+}
+
+.chart-bar-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
 }
 
 #compare-preset {
