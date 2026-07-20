@@ -42,7 +42,7 @@ function populateSelect(select) {
             // Several videos in the real dataset share an identical title
             // (e.g. multiple "Hickory Dickory Dock" uploads) — the channel
             // name is what actually tells them apart in the dropdown.
-            option.textContent = `${video.title} — ${video.channel}`;
+            option.textContent = `${video.title}: ${video.channel}`;
             group.appendChild(option);
         });
         select.appendChild(group);
@@ -128,7 +128,7 @@ function similarities(videoA, videoB) {
 // Research-grounded notes for specific pattern types, shown when that
 // type happens to be the biggest gap between the two selected videos.
 const RESEARCH_NOTES = {
-    silence_elimination: "The source research found silence elimination to be one of the most reliable escalation signals across the dataset — more reliable than raw loudness, which is more sensitive to mastering-level differences across eras.",
+    silence_elimination: "The source research found silence elimination to be one of the most reliable escalation signals across the dataset, more reliable than raw loudness, which is more sensitive to mastering-level differences across eras.",
     rapid_cutting: "The source research found cutting rate has historically changed less than other features, so a large cut-rate gap here is more likely genre-specific than a generational trend."
 };
 
@@ -145,7 +145,7 @@ function renderHeadline(videoA, videoB) {
 
     let sentence = `The biggest difference is <strong>${typeLabel}</strong>: `
         + `${higherName} (${diff.higherVideo.title}) scores far higher than ${lowerName} (${diff.lowerVideo.title}) `
-        + `— a gap of ${Math.round(diff.gap)} percentile points.`;
+        + `, a gap of ${Math.round(diff.gap)} percentile points.`;
 
     const note = RESEARCH_NOTES[diff.typeKey];
     if (note) sentence += ` <span class="era-note">${note}</span>`;
@@ -161,7 +161,7 @@ function renderSimilarities(videoA, videoB) {
     }
     similaritiesBox.hidden = false;
     const names = sims.map(s => TAXONOMY_SCHEMA[s.categoryKey].types[s.typeKey].label).join(", ");
-    similaritiesBox.innerHTML = `<strong>Where they're similar:</strong> ${names} — within ${SIMILARITY_THRESHOLD} percentile points of each other.`;
+    similaritiesBox.innerHTML = `<strong>Where they're similar:</strong> ${names}, within ${SIMILARITY_THRESHOLD} percentile points of each other.`;
 }
 
 function videoCellHTML(video, side) {
@@ -274,7 +274,7 @@ function renderComparisonChart(videoA, videoB) {
     const coveredB = pairs.filter(p => p.b.percentile != null).length;
 
     if (coveredA < 3 || coveredB < 3) {
-        comparisonChart.innerHTML = `<p class="panel-placeholder">Not enough measured data on one or both videos yet for a chart — see the table above for what is measured.</p>`;
+        comparisonChart.innerHTML = `<p class="panel-placeholder">Not enough measured data on one or both videos yet for a chart. See the table above for what is measured.</p>`;
         return;
     }
 
@@ -292,7 +292,7 @@ function renderComparisonChart(videoA, videoB) {
     comparisonChart.innerHTML = `
         <div class="bar-chart">${rows}</div>
         <p class="era-note">
-            Each pair of bars shows both videos' percentile score on that metric — the longer the bar,
+            Each pair of bars shows both videos' percentile score on that metric. The longer the bar,
             the more intense that video scored relative to the rest of the dataset.
         </p>
     `;

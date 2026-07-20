@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>HyperStim Video Audit — Resources</title>
+    <title>HyperStim Video Audit: Resources</title>
     <meta name="description" content="Methodology, dataset scope, and non-goals for the HyperStim video audit.">
 
     <link rel="stylesheet" href="assets/css/style.css">
@@ -38,11 +38,12 @@
 
 <main id="main-content">
 
-<section id="resources-intro">
+<section id="resources-intro" class="about-corner">
+    <div class="about-mascot" id="about-mascot"></div>
     <h2>Resources &amp; Methodology</h2>
     <p>
         This page explains where the data comes from, what the taxonomy actually measures,
-        and — just as important — what this site does <em>not</em> claim.
+        and, just as important, what this site does <em>not</em> claim.
     </p>
 
     <details class="explainer" open>
@@ -51,7 +52,7 @@
             Every video gets an overall score and a breakdown across three categories:
             <strong>Pacing Intensification</strong>, <strong>Recovery Denial</strong>, and
             <strong>Reward Patterning</strong>. Each category is built from named,
-            computationally-measured features — never a subjective judgment call.
+            computationally-measured features, never a subjective judgment call.
         </p>
         <ul class="band-key">
             <li><span class="rating-badge rating-good">Good</span> calmer than most of the dataset</li>
@@ -67,26 +68,26 @@
     <h3>Pacing Intensification</h3>
     <p>How fast the video moves visually.</p>
     <ul>
-        <li><strong>Rapid Cutting</strong> — how often the shot changes.</li>
-        <li><strong>Scene Discontinuity</strong> — how visually different one shot is from the next.</li>
-        <li><strong>Chromatic Instability</strong> — how much the color palette shifts frame to frame.</li>
-        <li><strong>Visual Intensity</strong> — overall color saturation and vividness.</li>
-        <li><strong>Continuous Visual Motion</strong> — how much of the video has visible motion, and how rarely it holds still.</li>
+        <li><strong>Rapid Cutting:</strong> how often the shot changes.</li>
+        <li><strong>Scene Discontinuity:</strong> how visually different one shot is from the next.</li>
+        <li><strong>Chromatic Instability:</strong> how much the color palette shifts frame to frame.</li>
+        <li><strong>Visual Intensity:</strong> overall color saturation and vividness.</li>
+        <li><strong>Continuous Visual Motion:</strong> how much of the video has visible motion, and how rarely it holds still.</li>
     </ul>
 
     <h3>Recovery Denial</h3>
     <p>How rarely the video lets a viewer's arousal come back down.</p>
     <ul>
-        <li><strong>Sustained Audio Intensity</strong> — average loudness across the video.</li>
-        <li><strong>Loudness Oscillation</strong> — how often volume jumps sharply.</li>
-        <li><strong>Silence Elimination</strong> — what share of the video is near-total silence.</li>
+        <li><strong>Sustained Audio Intensity:</strong> average loudness across the video.</li>
+        <li><strong>Loudness Oscillation:</strong> how often volume jumps sharply.</li>
+        <li><strong>Silence Elimination:</strong> what share of the video is near-total silence.</li>
     </ul>
 
     <h3>Reward Patterning</h3>
     <p>How often the video sets up a small payoff.</p>
     <ul>
-        <li><strong>Musical Build-Resolve</strong> — how often music builds tension and releases it.</li>
-        <li><strong>Surprise Reveals</strong> — how often a cut lines up with a sudden sound burst.</li>
+        <li><strong>Musical Build-Resolve:</strong> how often music builds tension and releases it.</li>
+        <li><strong>Surprise Reveals:</strong> how often a cut lines up with a sudden sound burst.</li>
     </ul>
 
     <p class="disclaimer">
@@ -114,17 +115,17 @@
         The dataset is produced by a separate measurement pipeline (ffmpeg/OpenCV feature
         extraction) and joined/percentile-ranked by <code>scripts/build_dataset.py</code>. This
         site does not analyze video files itself and cannot score a video the pipeline hasn't
-        already measured — see the Lookup page for what happens when a search doesn't match.
+        already measured. See the Lookup page for what happens when a search doesn't match.
     </p>
 </section>
 
 <section id="non-goals">
     <h2>What This Site Is Not</h2>
     <ul>
-        <li>Not a live video analysis tool — it cannot process a video the pipeline hasn't already measured.</li>
-        <li>Not a parental-control or content-filtering product — it doesn't block or rate content appropriateness.</li>
-        <li>Not a diagnostic or clinical tool — it makes no claims about individual developmental outcomes.</li>
-        <li>Not a claim of broader coverage than the data actually has — if the dataset is a pilot/subset, that's stated wherever counts or scores appear.</li>
+        <li>Not a live video analysis tool. It cannot process a video the pipeline hasn't already measured.</li>
+        <li>Not a parental-control or content-filtering product. It doesn't block or rate content appropriateness.</li>
+        <li>Not a diagnostic or clinical tool. It makes no claims about individual developmental outcomes.</li>
+        <li>Not a claim of broader coverage than the data actually has. If the dataset is a pilot/subset, that's stated wherever counts or scores appear.</li>
     </ul>
 </section>
 
@@ -135,7 +136,7 @@
         <summary>Does a high score mean this video is bad for my kid?</summary>
         <p>
             Not on its own. A high score means the video is produced in a more intense style than
-            most of this dataset — fast cuts, sustained loud audio, frequent reward payoffs. This
+            most of this dataset: fast cuts, sustained loud audio, frequent reward payoffs. This
             site measures production style only; it doesn't judge educational value, age
             appropriateness, or make any claim about developmental harm.
         </p>
@@ -146,14 +147,14 @@
         <p>
             A percentile of 73 means this video scores higher on that metric than 73% of the
             videos currently in the dataset. It's a relative ranking within this specific dataset,
-            not a fixed or universal scale — a score can shift slightly as more videos are added.
+            not a fixed or universal scale. A score can shift slightly as more videos are added.
         </p>
     </details>
 
     <details class="explainer">
         <summary>Why isn't my favorite video/channel in the dataset?</summary>
         <p>
-            The dataset only includes videos the research pipeline has specifically processed — it
+            The dataset only includes videos the research pipeline has specifically processed. It
             doesn't cover all of YouTube, and coverage is still growing. See "Dataset Scope" above
             for the current count.
         </p>
@@ -162,7 +163,7 @@
     <details class="explainer">
         <summary>Why does a video show "Not enough data" for some categories?</summary>
         <p>
-            Some videos have only been partially processed by the pipeline so far — a type shows
+            Some videos have only been partially processed by the pipeline so far. A type shows
             "Not enough data" only for the specific metrics that haven't been measured yet, not the
             whole video. Everything that has been measured is still a real score.
         </p>
@@ -172,7 +173,7 @@
         <summary>Who built this and can I trust the methodology?</summary>
         <p>
             Every score comes from named, computationally-measured features (cut rate, loudness,
-            color shifts, and so on) — never a subjective judgment call. The full taxonomy and
+            color shifts, and so on), never a subjective judgment call. The full taxonomy and
             feature list are documented above, and the data pipeline
             (<code>scripts/build_dataset.py</code>) is openly available in the project repository.
         </p>
@@ -183,7 +184,7 @@
 
 <footer>
     <p>Measures production style only. No claims of developmental harm are made.</p>
-    <p class="trust-badge">📊 Every score is a named, computationally-measured feature — never a subjective judgment call.</p>
+    <p class="trust-badge">📊 Every score is a named, computationally-measured feature, never a subjective judgment call.</p>
 </footer>
 
 <script src="assets/js/data.js"></script>

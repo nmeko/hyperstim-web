@@ -64,7 +64,7 @@ function cardHTML(video) {
     const topic = deriveTopic(video);
     const isReference = REFERENCE_VIDEO && video.video_id === REFERENCE_VIDEO.video_id;
     const referenceBadge = isReference
-        ? `<div class="reference-badge">Reference Point — closest to the dataset average</div>`
+        ? `<div class="reference-badge">Reference Point: closest to the dataset average</div>`
         : "";
 
     return `
@@ -221,7 +221,7 @@ function renderVideoPanel(video, notFoundQuery) {
             ? `
                 <div class="not-found">
                     <h3>This video hasn't been measured by this dataset yet</h3>
-                    <p>Only videos the research pipeline has already processed can be scored — this tool
+                    <p>Only videos the research pipeline has already processed can be scored. This tool
                     does not analyze new video content on demand.</p>
                 </div>
               `
@@ -252,7 +252,7 @@ function renderVideoPanel(video, notFoundQuery) {
 // right-hand panel instead of a modal-panel overlay.
 function renderDetailsPanel(video) {
     if (!video) {
-        detailsPanel.innerHTML = `<div class="panel-placeholder">Select a lookup result to view its detailed information.</div>`;
+        detailsPanel.innerHTML = `<div class="panel-placeholder">${mascotSVG(72)}<p>Select a lookup result to view its detailed information.</p></div>`;
         return;
     }
 
@@ -397,9 +397,9 @@ function openFromHash() {
 ========================================================= */
 
 const AUDIENCE_COPY = {
-    parent: "As a parent: use the overall band as a quick gut-check, then open a video's full breakdown to see exactly which pattern is driving the score — that's more useful than the single number alone.",
+    parent: "As a parent: use the overall band as a quick gut-check, then open a video's full breakdown to see exactly which pattern is driving the score. That's more useful than the single number alone.",
     creator: "As a creator: the type-by-type breakdown shows exactly which production choices (cut rate, silence, reward pacing) are pushing a score up, so you can see the trade-offs of a given edit style.",
-    regulator: "As a regulator or researcher: raw feature values and percentiles are shown in small print under every score. This is a pilot sample of a larger research pipeline — see Resources for dataset scope and methodology."
+    regulator: "As a regulator or researcher: raw feature values and percentiles are shown in small print under every score. This is a pilot sample of a larger research pipeline. See Resources for dataset scope and methodology."
 };
 
 audienceButtons.forEach(btn => {

@@ -18,7 +18,7 @@ const TAXONOMY_SCHEMA = {
     pacing_intensification: {
         label: "Pacing Intensification",
         short: "Pacing",
-        intro: "How fast the video moves visually — frequent cuts, shifting colors, and constant motion keep the visual system continually re-triggered.",
+        intro: "How fast the video moves visually: frequent cuts, shifting colors, and constant motion keep the visual system continually re-triggered.",
         types: {
             rapid_cutting: {
                 label: "Rapid Cutting",
@@ -51,7 +51,7 @@ const TAXONOMY_SCHEMA = {
     recovery_denial: {
         label: "Recovery Denial",
         short: "Recovery",
-        intro: "How often the video lets a viewer's arousal come back down — through quiet moments, steadier volume, and a break from constant intensity.",
+        intro: "How often the video lets a viewer's arousal come back down, through quiet moments, steadier volume, and a break from constant intensity.",
         types: {
             sustained_audio_intensity: {
                 label: "Sustained Audio Intensity",
@@ -74,7 +74,7 @@ const TAXONOMY_SCHEMA = {
     reward_patterning: {
         label: "Reward Patterning",
         short: "Reward",
-        intro: "How often the video sets up a small payoff — a musical release or a surprise reveal — training an expectation of constant reward.",
+        intro: "How often the video sets up a small payoff, a musical release or a surprise reveal, training an expectation of constant reward.",
         types: {
             musical_build_resolve: {
                 label: "Musical Build-Resolve",
@@ -172,7 +172,7 @@ function infoIconHTML(explanationText, ariaLabel = "What does this score mean?")
 
 const COMPOSITE_SCORE_EXPLANATION =
     "The overall score is the average of the Pacing, Recovery, and Reward category scores, " +
-    "ranked relative to every other video in this dataset — not an absolute or medical scale.";
+    "ranked relative to every other video in this dataset, not an absolute or medical scale.";
 
 // The composite/overall score badge, with its explanation tooltip built in.
 // Used everywhere a video's top-level score badge appears, so the
@@ -244,7 +244,7 @@ function videoEmbedHTML(video) {
             <div class="video-unavailable">
                 <img src="${youtubeThumbnail(video.video_id)}" alt="" loading="lazy">
                 <p><strong>Original video no longer publicly available</strong></p>
-                <p>${reasonText} The measurements below are still real — they just can't be replayed here.</p>
+                <p>${reasonText} The measurements below are still real. They just can't be replayed here.</p>
                 <button
                     type="button"
                     class="retry-video-button secondary"
@@ -412,14 +412,15 @@ function initOnboarding() {
     overlay.className = "onboarding-overlay";
     overlay.innerHTML = `
         <div class="onboarding-panel" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+            ${mascotSVG(64)}
             <h2 id="onboarding-title">Welcome to the HyperStim Video Audit</h2>
             <p>This site measures production-intensity patterns in children's videos across three categories:</p>
             <ul class="onboarding-categories">
-                <li><strong>Pacing Intensification</strong> — how fast the video moves visually.</li>
-                <li><strong>Recovery Denial</strong> — how rarely it lets a viewer calm back down.</li>
-                <li><strong>Reward Patterning</strong> — how often it sets up a small payoff.</li>
+                <li><strong>Pacing Intensification:</strong> how fast the video moves visually.</li>
+                <li><strong>Recovery Denial:</strong> how rarely it lets a viewer calm back down.</li>
+                <li><strong>Reward Patterning:</strong> how often it sets up a small payoff.</li>
             </ul>
-            <p>Every score is a band, shown with both a color and a shape (so it still reads without color):</p>
+            <p>Every score is a band, shown with both a color and a shape, so it still reads without color:</p>
             <ul class="band-key">
                 <li><span class="rating-badge rating-good"><span class="band-icon" aria-hidden="true">●</span>Good</span></li>
                 <li><span class="rating-badge rating-moderate"><span class="band-icon" aria-hidden="true">▲</span>Moderate</span></li>
@@ -490,6 +491,37 @@ function findSimilarVideo(video) {
     const differentEra = sameTopic.filter(v => v.era !== video.era);
     const pool = differentEra.length ? differentEra : sameTopic;
     return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/* =========================================================
+   13b. Site mascot — a calm, original character (not based on
+   any existing show/IP) used sparingly: empty states, the
+   onboarding walkthrough, and the Resources "about" corner.
+   Inline SVG using CSS variables so it adapts to dark mode
+   automatically. Purely decorative — always aria-hidden, with
+   the caller supplying real accessible text alongside it.
+========================================================= */
+
+function mascotSVG(size) {
+    const s = size || 96;
+    return `
+        <svg width="${s}" height="${s}" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+            <ellipse cx="60" cy="58" rx="46" ry="42" fill="var(--surface-alt)" />
+            <ellipse cx="60" cy="62" rx="39" ry="35" fill="var(--bg)" />
+            <ellipse cx="24" cy="20" rx="10" ry="15" fill="var(--surface-alt)" transform="rotate(-20 24 20)" />
+            <ellipse cx="96" cy="20" rx="10" ry="15" fill="var(--surface-alt)" transform="rotate(20 96 20)" />
+            <ellipse cx="30" cy="98" rx="16" ry="10" fill="var(--surface-alt)" transform="rotate(15 30 98)" />
+            <ellipse cx="90" cy="98" rx="16" ry="10" fill="var(--surface-alt)" transform="rotate(-15 90 98)" />
+            <circle cx="44" cy="54" r="5" fill="var(--primary)" />
+            <circle cx="76" cy="54" r="5" fill="var(--primary)" />
+            <path d="M 46 76 Q 60 84 74 76" fill="none" stroke="var(--accent-b)" stroke-width="3" stroke-linecap="round" />
+            <g transform="translate(60,102)">
+                <path d="M0 14 C -3 4 -3 -4 0 -12" fill="none" stroke="var(--accent-b)" stroke-width="3" stroke-linecap="round" />
+                <path d="M0 -12 C -8 -14 -11 -6 -6 -1 C -2 -6 -1 -9 0 -12 Z" fill="var(--primary)" />
+                <path d="M0 -12 C 8 -14 11 -6 6 -1 C 2 -6 1 -9 0 -12 Z" fill="var(--accent-a)" />
+            </g>
+        </svg>
+    `;
 }
 
 /* =========================================================
@@ -719,6 +751,9 @@ document.addEventListener("DOMContentLoaded", () => {
     initVideoRetryHandlers();
     initCompareTray();
     initCopyLinkButtons();
+
+    const aboutMascot = document.getElementById("about-mascot");
+    if (aboutMascot) aboutMascot.innerHTML = mascotSVG(72);
 });
 
 window.addEventListener("resize", () => {

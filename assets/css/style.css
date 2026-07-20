@@ -3,24 +3,24 @@
 ========================================================= */
 
 :root {
-    --bg: #ffffff;
-    --surface: #f8f9fb;
-    --surface-alt: #eef1f5;
-    --text: #1a1a1a;
-    --muted: #5b6573;
+    --bg: #FAF6ED;
+    --surface: #F3EDE0;
+    --surface-alt: #EDE4D3;
+    --text: #2E2A22;
+    --muted: #6B6252;
 
-    --primary: #1f6feb;
-    --primary-hover: #1656b8;
+    --primary: #3F6659;
+    --primary-hover: #335247;
 
-    --accent-a: #1f6feb;   /* Video A in compare */
-    --accent-b: #b7791f;   /* Video B in compare */
+    --accent-a: #3F6659;   /* Video A in compare */
+    --accent-b: #9A5A2A;   /* Video B in compare */
 
     --good: #1a7f37;
     --moderate: #b7791f;
     --extreme: #b42318;
     --unknown: #6b7280;
 
-    --border: #d0d7de;
+    --border: #DDD2BC;
 
     --radius: 0.75rem;
     --radius-sm: 0.5rem;
@@ -34,24 +34,24 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg: #12151a;
-        --surface: #1a1e25;
-        --surface-alt: #232830;
-        --text: #e8eaed;
-        --muted: #9aa1ac;
+        --bg: #1B1814;
+        --surface: #242019;
+        --surface-alt: #2E2820;
+        --text: #EDE7DA;
+        --muted: #B0A690;
 
-        --primary: #4d9fff;
-        --primary-hover: #6fb3ff;
+        --primary: #7FB09E;
+        --primary-hover: #98C2B2;
 
-        --accent-a: #4d9fff;
-        --accent-b: #e0a940;
+        --accent-a: #7FB09E;
+        --accent-b: #E0A870;
 
         --good: #3fbf5f;
         --moderate: #e0a940;
         --extreme: #e0554a;
         --unknown: #8a929e;
 
-        --border: #30363d;
+        --border: #3D362A;
         --shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
     }
 }
@@ -459,7 +459,30 @@ body:has(#compare-tray) {
     padding: 2rem;
 }
 
-.onboarding-panel h2 { margin-top: 0; }
+.onboarding-panel > svg {
+    display: block;
+    margin: 0 auto 0.5rem;
+}
+
+.onboarding-panel h2 { margin-top: 0; text-align: center; }
+
+.about-corner {
+    position: relative;
+}
+
+.about-mascot {
+    float: right;
+    margin: 0 0 0.75rem 1rem;
+}
+
+@media (max-width: 600px) {
+    .about-mascot {
+        float: none;
+        display: flex;
+        justify-content: center;
+        margin: 0 0 1rem;
+    }
+}
 
 .onboarding-categories {
     padding-left: 1.25rem;
