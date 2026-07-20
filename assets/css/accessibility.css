@@ -6,6 +6,13 @@
     position: sticky;
     top: 0;
     z-index: 1000;
+    transition: transform 0.25s ease;
+}
+
+@media (max-width: 600px) {
+    #site-header.header-hidden {
+        transform: translateY(-100%);
+    }
 }
 
 #accessibility-toolbar {

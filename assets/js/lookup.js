@@ -6,6 +6,18 @@
 
 let activeVideos = SITE_DATA.videos.slice();
 
+// Mobile pagination: small screens show 5 videos at a time with a "Show
+// more" button, rather than the full grid, so a long result list doesn't
+// overload the page on a phone. Desktop/tablet is unaffected. Resets to
+// 5 whenever the underlying result set changes (new search/filter).
+const MOBILE_PAGE_SIZE = 5;
+const MOBILE_BREAKPOINT = "(max-width: 600px)";
+let mobileVisibleCount = MOBILE_PAGE_SIZE;
+
+function isMobileViewport() {
+    return typeof window.matchMedia === "function" && window.matchMedia(MOBILE_BREAKPOINT).matches;
+}
+
 /* =========================================================
    Elements
 ========================================================= */
@@ -140,13 +152,29 @@ function renderCards(videos) {
             </article>
         `;
     } else {
-        videos.forEach(video => {
+        const onMobile = isMobileViewport();
+        const visibleVideos = onMobile ? videos.slice(0, mobileVisibleCount) : videos;
+
+        visibleVideos.forEach(video => {
             const card = document.createElement("article");
             card.className = "video-card";
             card.innerHTML = cardHTML(video);
             grid.appendChild(card);
             attachHoverPreview(card, video);
         });
+
+        if (onMobile && videos.length > visibleVideos.length) {
+            const remaining = videos.length - visibleVideos.length;
+            const showMoreButton = document.createElement("button");
+            showMoreButton.type = "button";
+            showMoreButton.className = "secondary show-more-button";
+            showMoreButton.textContent = `Show ${Math.min(MOBILE_PAGE_SIZE, remaining)} more (${remaining} left)`;
+            showMoreButton.addEventListener("click", () => {
+                mobileVisibleCount += MOBILE_PAGE_SIZE;
+                renderCards(videos);
+            });
+            grid.appendChild(showMoreButton);
+        }
     }
 
     if (resultCount) {
@@ -192,6 +220,7 @@ function applyFiltersAndSort() {
     });
 
     activeVideos = videos;
+    mobileVisibleCount = MOBILE_PAGE_SIZE;
     renderCards(videos);
 }
 
@@ -425,5 +454,13 @@ if (sortSelect) sortSelect.addEventListener("change", applyFiltersAndSort);
 populateTopicFilter();
 applyFiltersAndSort();
 if (audienceNote) audienceNote.textContent = AUDIENCE_COPY.parent;
+
+// Re-render on resize so rotating a phone or resizing a window switches
+// correctly between the paginated mobile view and the full desktop grid.
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => renderCards(activeVideos), 200);
+});
 openFromHash();
 window.addEventListener("hashchange", openFromHash);

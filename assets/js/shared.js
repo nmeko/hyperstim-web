@@ -128,11 +128,12 @@ function formatBand(band, percentile) {
 // aria-hidden because the dots are purely decorative reinforcement; the
 // real accessible value is always the text label + number next to it.
 function dotScaleHTML(percentile) {
+    const band = bandFor(percentile);
     if (percentile === null || percentile === undefined || Number.isNaN(percentile)) {
-        return `<span class="dot-scale" aria-hidden="true">${"○".repeat(5)}</span>`;
+        return `<span class="dot-scale dot-scale-${band.class}" aria-hidden="true">${"○".repeat(5)}</span>`;
     }
     const filled = Math.max(0, Math.min(5, Math.round(percentile / 20)));
-    return `<span class="dot-scale" aria-hidden="true">${"●".repeat(filled)}${"○".repeat(5 - filled)}</span>`;
+    return `<span class="dot-scale dot-scale-${band.class}" aria-hidden="true">${"●".repeat(filled)}${"○".repeat(5 - filled)}</span>`;
 }
 
 // A visual marker showing where a score sits along the 0-100 dataset
@@ -389,6 +390,52 @@ function updateStickyHeaderOffset() {
     const header = document.getElementById("site-header");
     if (!header) return;
     document.documentElement.style.setProperty("--sticky-header-height", `${header.offsetHeight}px`);
+}
+
+/* =========================================================
+   10b. Auto-hide header on mobile scroll — the sticky header
+   eats a lot of a phone's vertical space. Scrolling down hides
+   it (translated off-screen via CSS); scrolling up reveals it
+   again. Desktop is unaffected — the header always stays put
+   there, matching how it's always worked.
+========================================================= */
+
+function initHeaderAutoHide() {
+    const header = document.getElementById("site-header");
+    if (!header || typeof window.matchMedia !== "function") return;
+
+    const MOBILE_QUERY = "(max-width: 600px)";
+    const HIDE_THRESHOLD = 80; // don't hide on tiny, incidental scrolls
+    let lastScrollY = window.scrollY || 0;
+    let ticking = false;
+
+    function handleScroll() {
+        if (!window.matchMedia(MOBILE_QUERY).matches) {
+            header.classList.remove("header-hidden");
+            lastScrollY = window.scrollY || 0;
+            ticking = false;
+            return;
+        }
+
+        const currentY = window.scrollY || 0;
+        const scrollingDown = currentY > lastScrollY;
+
+        if (scrollingDown && currentY > HIDE_THRESHOLD) {
+            header.classList.add("header-hidden");
+        } else if (!scrollingDown) {
+            header.classList.remove("header-hidden");
+        }
+
+        lastScrollY = currentY;
+        ticking = false;
+    }
+
+    window.addEventListener("scroll", () => {
+        if (!ticking) {
+            requestAnimationFrame(handleScroll);
+            ticking = true;
+        }
+    });
 }
 
 /* =========================================================
@@ -746,6 +793,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initAccessibilityBar();
     initScrollReveal();
     updateStickyHeaderOffset();
+    initHeaderAutoHide();
     initBackToTop();
     initOnboarding();
     initVideoRetryHandlers();

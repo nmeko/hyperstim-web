@@ -26,6 +26,11 @@
     vertical-align: middle;
 }
 
+.dot-scale-good { color: var(--good); }
+.dot-scale-moderate { color: var(--moderate); }
+.dot-scale-extreme { color: var(--extreme); }
+.dot-scale-unknown { color: var(--unknown); }
+
 /* =========================================================
    Distribution marker
 ========================================================= */
@@ -495,6 +500,33 @@ iframe {
     flex: 1;
     text-align: center;
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    min-height: 44px;
+    border: 1px solid transparent;
+}
+
+.card-actions .details-button {
+    background: var(--primary);
+    color: white;
+}
+
+.card-actions .details-button:hover {
+    background: var(--primary-hover);
+}
+
+.card-actions .compare-link {
+    background: var(--accent-b);
+    color: white;
+}
+
+.card-actions .compare-link:hover {
+    background: var(--accent-b);
+    opacity: 0.88;
 }
 
 .similar-suggestion {
@@ -545,6 +577,16 @@ iframe {
 /* =========================================================
    Compare page
 ========================================================= */
+
+#compare-picker {
+    position: relative;
+    overflow: hidden;
+}
+
+#compare-picker > *:not(.dynamic-bg) {
+    position: relative;
+    z-index: 1;
+}
 
 .compare-selects {
     display: flex;

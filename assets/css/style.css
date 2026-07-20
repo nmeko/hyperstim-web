@@ -93,7 +93,7 @@ body {
     margin: 0;
     background: var(--bg);
     color: var(--text);
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
     line-height: 1.6;
     font-size: 1rem;
 }
@@ -188,7 +188,83 @@ footer {
    Hero
 ========================================================= */
 
-#hero { text-align: center; }
+#hero {
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+#hero > *:not(.dynamic-bg) {
+    position: relative;
+    z-index: 1;
+}
+
+/* =========================================================
+   Dynamic background — soft, slow-drifting blobs behind the
+   top section of Lookup and Compare. Deliberately gentle and
+   slow (25-35s cycles), matching the site's own calm ethos.
+   Purely decorative (aria-hidden). Motion is disabled
+   automatically for prefers-reduced-motion via the global
+   override further down this file.
+========================================================= */
+
+.dynamic-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.bg-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.35;
+}
+
+.bg-blob-1 {
+    width: 320px;
+    height: 320px;
+    top: -80px;
+    left: -60px;
+    background: var(--primary);
+    animation: drift-1 28s ease-in-out infinite alternate;
+}
+
+.bg-blob-2 {
+    width: 260px;
+    height: 260px;
+    top: 40px;
+    right: -80px;
+    background: var(--accent-b);
+    animation: drift-2 34s ease-in-out infinite alternate;
+}
+
+.bg-blob-3 {
+    width: 200px;
+    height: 200px;
+    bottom: -100px;
+    left: 40%;
+    background: var(--good);
+    opacity: 0.18;
+    animation: drift-3 40s ease-in-out infinite alternate;
+}
+
+@keyframes drift-1 {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(40px, 30px) scale(1.08); }
+}
+
+@keyframes drift-2 {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(-30px, 40px) scale(0.95); }
+}
+
+@keyframes drift-3 {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(20px, -25px) scale(1.1); }
+}
 
 #hero h2 { font-size: 1.75rem; }
 
@@ -276,6 +352,12 @@ button.secondary:hover {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
     margin-top: 1.5rem;
+}
+
+.show-more-button {
+    grid-column: 1 / -1;
+    justify-self: center;
+    margin-top: 0.5rem;
 }
 
 /* =========================================================
