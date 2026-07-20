@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Page not found: HyperStim Video Audit</title>
+    <meta name="description" content="This page doesn't exist. Find your way back to the HyperStim Video Audit.">
+
+    <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+    <meta name="theme-color" content="#FAF6ED">
+    <meta name="robots" content="noindex">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/accessibility.css">
+</head>
+
+<body>
+
+<div id="site-header">
+<div id="accessibility-toolbar">
+    <button id="text-smaller" aria-label="Decrease text size">A-</button>
+    <button id="text-reset" aria-label="Reset text size">A</button>
+    <button id="text-larger" aria-label="Increase text size">A+</button>
+    <button id="contrast-toggle" aria-label="Toggle high contrast mode">High Contrast</button>
+</div>
+
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<header>
+    <nav aria-label="Main Navigation">
+        <div class="site-brand">
+            <span class="site-mascot" id="site-mascot"></span>
+            <h1>HyperStim Video Audit</h1>
+        </div>
+        <ul>
+            <li><a href="index.html">Lookup</a></li>
+            <li><a href="compare.html">Compare</a></li>
+            <li><a href="resources.html">Resources</a></li>
+        </ul>
+    </nav>
+</header>
+</div>
+
+<main id="main-content">
+
+<section id="not-found" class="not-found">
+    <div id="not-found-mascot" class="not-found-mascot"></div>
+    <h2>This page wandered off</h2>
+    <p>
+        There's nothing here, the link may be outdated, or the page may have moved.
+        Here's where you probably meant to go:
+    </p>
+    <div class="not-found-links">
+        <a class="secondary" href="index.html">Look up a video</a>
+        <a class="secondary" href="compare.html">Compare two videos</a>
+        <a class="secondary" href="resources.html">Read the methodology</a>
+    </div>
+</section>
+
+</main>
+
+<footer>
+    <p>Measures production style only. No claims of developmental harm are made.</p>
+</footer>
+
+<script src="assets/js/shared.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const notFoundMascot = document.getElementById("not-found-mascot");
+        if (notFoundMascot) notFoundMascot.innerHTML = mascotSVG(96);
+    });
+</script>
+
+</body>
+</html>

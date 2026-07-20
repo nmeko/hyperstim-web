@@ -802,6 +802,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const aboutMascot = document.getElementById("about-mascot");
     if (aboutMascot) aboutMascot.innerHTML = mascotSVG(72);
+
+    const siteMascot = document.getElementById("site-mascot");
+    if (siteMascot) siteMascot.innerHTML = mascotSVG(36);
 });
 
 window.addEventListener("resize", () => {
