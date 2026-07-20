@@ -10,6 +10,12 @@
     border-radius: 999px;
     font-weight: bold;
     font-size: 0.9rem;
+    animation: badge-reveal 0.35s ease-out;
+}
+
+@keyframes badge-reveal {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
 }
 
 .band-icon {
@@ -30,6 +36,16 @@
 .dot-scale-moderate { color: var(--moderate); }
 .dot-scale-extreme { color: var(--extreme); }
 .dot-scale-unknown { color: var(--unknown); }
+
+.dot-scale .dot {
+    display: inline-block;
+    animation: dot-pop 0.3s ease-out backwards;
+}
+
+@keyframes dot-pop {
+    from { opacity: 0; transform: scale(0.4); }
+    to   { opacity: 1; transform: scale(1); }
+}
 
 /* =========================================================
    Distribution marker
@@ -426,6 +442,12 @@ iframe {
     box-shadow: var(--shadow);
     display: flex;
     flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.video-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .video-thumb {

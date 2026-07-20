@@ -129,11 +129,17 @@ function formatBand(band, percentile) {
 // real accessible value is always the text label + number next to it.
 function dotScaleHTML(percentile) {
     const band = bandFor(percentile);
-    if (percentile === null || percentile === undefined || Number.isNaN(percentile)) {
-        return `<span class="dot-scale dot-scale-${band.class}" aria-hidden="true">${"○".repeat(5)}</span>`;
-    }
-    const filled = Math.max(0, Math.min(5, Math.round(percentile / 20)));
-    return `<span class="dot-scale dot-scale-${band.class}" aria-hidden="true">${"●".repeat(filled)}${"○".repeat(5 - filled)}</span>`;
+    const filled = (percentile === null || percentile === undefined || Number.isNaN(percentile))
+        ? 0
+        : Math.max(0, Math.min(5, Math.round(percentile / 20)));
+
+    const dots = Array.from({ length: 5 }, (_, i) => {
+        const char = i < filled ? "●" : "○";
+        const delay = (i * 0.06).toFixed(2);
+        return `<span class="dot" style="animation-delay: ${delay}s;">${char}</span>`;
+    }).join("");
+
+    return `<span class="dot-scale dot-scale-${band.class}" aria-hidden="true">${dots}</span>`;
 }
 
 // A visual marker showing where a score sits along the 0-100 dataset
@@ -552,7 +558,7 @@ function findSimilarVideo(video) {
 function mascotSVG(size) {
     const s = size || 96;
     return `
-        <svg width="${s}" height="${s}" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+        <svg width="${s}" height="${s}" viewBox="0 0 120 120" aria-hidden="true" focusable="false" class="mascot-bob">
             <ellipse cx="60" cy="58" rx="46" ry="42" fill="var(--surface-alt)" />
             <ellipse cx="60" cy="62" rx="39" ry="35" fill="var(--bg)" />
             <ellipse cx="24" cy="20" rx="10" ry="15" fill="var(--surface-alt)" transform="rotate(-20 24 20)" />

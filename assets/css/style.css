@@ -154,6 +154,16 @@ header nav h1 {
     display: block;
 }
 
+.mascot-bob {
+    animation: mascot-bob 4.5s ease-in-out infinite;
+    transform-origin: center;
+}
+
+@keyframes mascot-bob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+}
+
 .not-found {
     text-align: center;
     max-width: 480px;
@@ -342,6 +352,14 @@ button {
 }
 
 button:hover { background: var(--primary-hover); }
+
+button:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+button {
+    transition: transform 0.1s ease, background 0.15s ease;
+}
 
 button:disabled {
     opacity: 0.5;
