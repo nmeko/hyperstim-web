@@ -789,3 +789,16 @@ body:has(#compare-tray) {
 @media print {
     .toc { display: none !important; }
 }
+
+.citation-block {
+    background: var(--surface);
+    border-left: 3px solid var(--primary);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-style: italic;
+}
+
+.citation-block p {
+    margin: 0;
+}
