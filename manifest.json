@@ -1,0 +1,16 @@
+{
+    "name": "HyperStim Video Audit",
+    "short_name": "HyperStim",
+    "description": "Measuring production-intensity patterns in children's videos.",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#FAF6ED",
+    "theme_color": "#FAF6ED",
+    "icons": [
+        {
+            "src": "assets/img/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ]
+}

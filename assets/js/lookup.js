@@ -197,6 +197,24 @@ function populateTopicFilter() {
     });
 }
 
+// Search-suggestion datalist, populated from real video titles and channel
+// names so the search box behaves like a real app's search rather than a
+// guess-and-check text field with no feedback until you hit Enter.
+function populateVideoSuggestions() {
+    const datalist = document.getElementById("video-suggestions");
+    if (!datalist) return;
+    const titles = new Set();
+    SITE_DATA.videos.forEach(video => {
+        if (video.title) titles.add(video.title);
+        if (video.channel) titles.add(video.channel);
+    });
+    titles.forEach(title => {
+        const option = document.createElement("option");
+        option.value = title;
+        datalist.appendChild(option);
+    });
+}
+
 function applyFiltersAndSort() {
     const query = (input.value || "").trim().toLowerCase();
     const topic = topicFilter ? topicFilter.value : "";
@@ -452,6 +470,7 @@ if (topicFilter) topicFilter.addEventListener("change", applyFiltersAndSort);
 if (sortSelect) sortSelect.addEventListener("change", applyFiltersAndSort);
 
 populateTopicFilter();
+populateVideoSuggestions();
 applyFiltersAndSort();
 if (audienceNote) audienceNote.textContent = AUDIENCE_COPY.parent;
 

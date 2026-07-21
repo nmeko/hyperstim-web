@@ -9,6 +9,8 @@
 
     <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
     <meta name="theme-color" content="#FAF6ED">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
     <link rel="canonical" href="https://nmeko.github.io/hyperstim-web/index.html">
 
     <meta property="og:type" content="website">
@@ -112,6 +114,27 @@
     </details>
 </section>
 
+<section id="how-it-works">
+    <h2 class="sr-only">How This Site Works</h2>
+    <ol class="steps">
+        <li>
+            <span class="step-number">1</span>
+            <h3>Search a video</h3>
+            <p>Paste a YouTube link, or search by title or channel.</p>
+        </li>
+        <li>
+            <span class="step-number">2</span>
+            <h3>See its score breakdown</h3>
+            <p>A full production-intensity breakdown across pacing, recovery, and reward.</p>
+        </li>
+        <li>
+            <span class="step-number">3</span>
+            <h3>Compare it to another</h3>
+            <p>See two videos side by side, or against a historical example.</p>
+        </li>
+    </ol>
+</section>
+
 <section id="lookup-area">
     <h2>Search, Paste a Link, or Drop a Video</h2>
 
@@ -119,9 +142,11 @@
         <input
             type="text"
             id="video-input"
+            list="video-suggestions"
             placeholder="Paste a YouTube URL, video ID, title, or channel"
             aria-label="Video search, or paste a YouTube link"
         />
+        <datalist id="video-suggestions"></datalist>
         <button id="lookup-button" type="button">Look Up Video</button>
         <p class="drop-hint">
             You can also drag a YouTube link here, or drop a local video file to match it by filename
