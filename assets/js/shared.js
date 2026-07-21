@@ -341,7 +341,15 @@ function initAccessibilityBar() {
     const MAX = 26;
     const DEFAULT = 16;
 
-    let currentFontSize = DEFAULT;
+    const FONT_SIZE_KEY = "hyperstim_font_size";
+    const CONTRAST_KEY = "hyperstim_contrast";
+
+    function readSavedFontSize() {
+        const saved = parseInt(localStorage.getItem(FONT_SIZE_KEY), 10);
+        return (Number.isFinite(saved) && saved >= MIN && saved <= MAX) ? saved : DEFAULT;
+    }
+
+    let currentFontSize = readSavedFontSize();
 
     const smaller = document.getElementById("text-smaller");
     const reset = document.getElementById("text-reset");
@@ -350,11 +358,16 @@ function initAccessibilityBar() {
 
     function applyFontSize() {
         html.style.fontSize = `${currentFontSize}px`;
+        localStorage.setItem(FONT_SIZE_KEY, String(currentFontSize));
         // Font-size changes the sticky header's actual rendered height
         // (toolbar buttons and nav text both scale) — remeasure so
         // anything offset below it (like a sticky panel) stays correct.
         requestAnimationFrame(updateStickyHeaderOffset);
     }
+
+    // Apply the saved font size immediately on this page too, so a
+    // preference set on one page carries over to every other page.
+    applyFontSize();
 
     if (larger) {
         larger.addEventListener("click", () => {
@@ -378,12 +391,17 @@ function initAccessibilityBar() {
     }
 
     if (contrast) {
+        const savedContrast = localStorage.getItem(CONTRAST_KEY) === "high";
+        html.dataset.contrast = savedContrast ? "high" : "";
+        contrast.setAttribute("aria-pressed", String(savedContrast));
+
         contrast.addEventListener("click", () => {
             const isHigh = html.dataset.contrast === "high";
-            html.dataset.contrast = isHigh ? "" : "high";
-            contrast.setAttribute("aria-pressed", String(!isHigh));
+            const next = !isHigh;
+            html.dataset.contrast = next ? "high" : "";
+            contrast.setAttribute("aria-pressed", String(next));
+            localStorage.setItem(CONTRAST_KEY, next ? "high" : "");
         });
-        contrast.setAttribute("aria-pressed", "false");
     }
 }
 

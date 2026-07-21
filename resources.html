@@ -28,6 +28,16 @@
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/components.css">
     <link rel="stylesheet" href="assets/css/accessibility.css">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "HyperStim Video Audit",
+        "url": "https://nmeko.github.io/hyperstim-web/",
+        "description": "A research tool measuring production-intensity patterns in children's videos, based on a taxonomy of pacing, audio intensity, and reward patterning."
+    }
+    </script>
+
 </head>
 
 <body>
@@ -58,6 +68,17 @@
 </div>
 
 <main id="main-content">
+
+<nav class="toc" id="toc" aria-label="Table of contents">
+    <p class="toc-label">On this page</p>
+    <ul>
+        <li><a href="#resources-intro">Resources &amp; Methodology</a></li>
+        <li><a href="#resources-list">The Taxonomy</a></li>
+        <li><a href="#dataset-scope">Dataset Scope</a></li>
+        <li><a href="#non-goals">What This Site Is Not</a></li>
+        <li><a href="#faq">Common Questions</a></li>
+    </ul>
+</nav>
 
 <section id="resources-intro" class="about-corner">
     <div class="about-mascot" id="about-mascot"></div>
@@ -249,6 +270,25 @@
                 text += ` The pipeline's eventual target scope is ${meta.full_corpus_size} videos.`;
             }
             el.textContent = text;
+
+            // Live Dataset schema, populated from the real current numbers
+            // rather than a static count that would go stale on every rebuild.
+            const schema = {
+                "@context": "https://schema.org",
+                "@type": "Dataset",
+                "name": "HyperStim Video Audit Dataset",
+                "description": "Production-intensity measurements for children's videos across a taxonomy of pacing, audio intensity, and reward patterning.",
+                "url": "https://nmeko.github.io/hyperstim-web/resources.html",
+                "creator": { "@type": "Organization", "name": "HyperStim Research" },
+                "variableMeasured": ["cuts_per_min", "mean_rms_db", "silence_frac", "build_resolve_per_min"],
+            };
+            if (typeof meta.generated_at === "string") schema.dateModified = meta.generated_at;
+            schema.size = `${size} videos`;
+
+            const schemaTag = document.createElement("script");
+            schemaTag.type = "application/ld+json";
+            schemaTag.textContent = JSON.stringify(schema);
+            document.head.appendChild(schemaTag);
         }
         renderTaxonomyDiagram();
         renderLastUpdated();

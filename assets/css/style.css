@@ -679,3 +679,113 @@ body:has(#compare-tray) {
 [data-reveal] { opacity: 1; }
 [data-reveal].reveal-armed { opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease; transform: translateY(12px); }
 [data-reveal].reveal-armed.revealed { opacity: 1; transform: none; }
+
+/* =========================================================
+   Print styles — strip anything interactive or purely
+   decorative, and force clean black-on-white output
+   regardless of the active theme or dark mode.
+========================================================= */
+
+@media print {
+    #accessibility-toolbar,
+    #back-to-top,
+    #compare-tray,
+    .skip-link,
+    .dynamic-bg,
+    .copy-link-button,
+    .show-more-button,
+    .onboarding-overlay,
+    .not-found-links,
+    #video-container,
+    .video-thumb,
+    .card-actions,
+    .site-mascot,
+    .about-mascot,
+    .not-found-mascot {
+        display: none !important;
+    }
+
+    #site-header {
+        position: static;
+        box-shadow: none;
+    }
+
+    body {
+        background: white;
+        color: black;
+    }
+
+    .rating-badge,
+    .video-card,
+    .trust-badge,
+    .chart-bar-group {
+        background: white !important;
+        color: black !important;
+        border: 1px solid #999 !important;
+        box-shadow: none !important;
+    }
+
+    a {
+        color: black;
+        text-decoration: underline;
+    }
+
+    a[href^="http"]::after {
+        content: " (" attr(href) ")";
+        font-size: 0.8em;
+        color: #555;
+    }
+
+    .mascot-bob, .bg-blob {
+        animation: none !important;
+    }
+}
+
+/* =========================================================
+   Table of contents (Resources page)
+========================================================= */
+
+.toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.toc-label {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+}
+
+.toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.toc a {
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+@media (min-width: 1000px) {
+    .toc {
+        float: right;
+        width: 200px;
+        margin: 0 0 1rem 2rem;
+        position: sticky;
+        top: calc(var(--sticky-header-height, 5rem) + 1rem);
+    }
+}
+
+@media print {
+    .toc { display: none !important; }
+}
