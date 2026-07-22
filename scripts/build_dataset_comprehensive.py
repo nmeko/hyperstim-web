@@ -3,7 +3,7 @@
 scripts/build_dataset_comprehensive.py
 -------------------------------------------------------------------
 EXPERIMENTAL / NOT YET ADOPTED. A separate copy of build_dataset.py,
-written to read the NEW consolidated feature file your teammate's
+written to read the new consolidated feature file your teammate's
 pipeline now produces (comprehensive-features.tsv), instead of the
 old three-file split (features_v2.tsv + features_v3.tsv +
 audio_analysis.tsv).
@@ -17,20 +17,23 @@ WHY THIS EXISTS
     site's 10 pattern types rather than raw measurement categories.
     That's a genuine improvement. But it also:
       - Drops the std/max/min/percentile distributional columns the
-        old schema had (mean-only now). If those were never used in
-        scoring, no loss; if they were, that's a real methodology
-        question for whoever owns the pipeline, not something this
-        script should silently paper over.
+        old schema had (mean-only now).
       - Does NOT include loudness_oscillation_score, one of the 13
         features the site's taxonomy needs. This script falls back
         to audio_analysis.tsv for JUST that one column if it's
-        present, and prints a clear warning if it isn't anywhere —
-        it never fabricates a value.
+        present, and prints a clear warning if it isn't anywhere.
+      - Has no title column of its own. Titles come from the
+        pipeline's own video_manifest.tsv (pass via --video-manifest),
+        which is the authoritative full-corpus source -- the older
+        anchor/expansion/historical manifest files only ever covered
+        a small ~200-video subset and don't have titles for the much
+        larger corpus this comprehensive file actually covers.
 
 USAGE
     python3 scripts/build_dataset_comprehensive.py --repo /path/to/HyperStimulation \
-        --comprehensive-file comprehensive-features.tsv \
-        --out /tmp/data_comprehensive_test.js
+        --comprehensive-file teammate-comprehensive-features.tsv \
+        --video-manifest /path/to/video_manifest.tsv \
+        --out /tmp/data_test.js
 
     Write to a throwaway --out path first (as above) to review the
     result before ever pointing --out at the live assets/js/data.js.
@@ -40,7 +43,6 @@ USAGE
 import argparse
 import csv
 import json
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -73,7 +75,7 @@ INVERTED_FEATURES = {"mean_shot_dur_s", "inter_cut_ssim_mean", "motion_rest_frac
 ALL_FEATURES = sorted({f for cat in TAXONOMY_SCHEMA.values() for feats in cat.values() for f in feats})
 
 # Columns confirmed present in the new comprehensive file (everything
-# except loudness_oscillation_score, per the header comparison).
+# except loudness_oscillation_score).
 COMPREHENSIVE_FEATURES = [f for f in ALL_FEATURES if f != "loudness_oscillation_score"]
 
 MANIFEST_FILES = ["anchor-manifest.tsv", "expansion-manifest.tsv", "historical-manifest.tsv"]
@@ -94,8 +96,32 @@ def to_number(value):
         return None
 
 
-def load_and_join(data_dir, comprehensive_filename):
+def load_and_join(data_dir, comprehensive_filename, video_manifest_path=None):
     records = {}
+
+    # The pipeline's own video_manifest.tsv (if provided) is the authoritative,
+    # full-corpus source of real titles -- the older anchor/expansion/historical
+    # manifest files only ever covered a small ~200-video subset and don't have
+    # titles for the vastly larger set this comprehensive file actually covers.
+    if video_manifest_path:
+        vm_path = Path(video_manifest_path)
+        if vm_path.exists():
+            vm_rows = read_tsv(vm_path)
+            print(f"Video manifest: {len(vm_rows)} rows (primary title source)")
+            for row in vm_rows:
+                vid = row.get("video_id")
+                if not vid:
+                    continue
+                rec = records.setdefault(vid, {"video_id": vid})
+                title = row.get("title", "").strip()
+                channel = row.get("channel_title", "").strip()
+                if title:
+                    rec["title"] = title
+                if channel:
+                    rec["channel"] = channel
+        else:
+            print(f"WARNING: --video-manifest path {vm_path} does not exist -- "
+                  f"titles will fall back to older, smaller manifest files.")
 
     for fname in MANIFEST_FILES:
         path = data_dir / fname
@@ -108,9 +134,9 @@ def load_and_join(data_dir, comprehensive_filename):
             rec = records.setdefault(vid, {"video_id": vid})
             title = row.get("title", "").strip()
             channel = row.get("channel", "").strip()
-            if title:
+            if title and not rec.get("title"):
                 rec["title"] = title
-            if channel:
+            if channel and not rec.get("channel"):
                 rec["channel"] = channel
             era = row.get("era", "").strip()
             if era:
@@ -132,14 +158,17 @@ def load_and_join(data_dir, comprehensive_filename):
         if not vid:
             continue
         rec = records.setdefault(vid, {"video_id": vid})
-        # channel_title here comes straight from the pipeline's own manifest
-        # join, not from anchor/expansion-manifest.tsv -- only use it if we
-        # don't already have a title/channel from those.
-        rec.setdefault("title", row.get("title", "").strip())
+        # Only fall back to this file's own channel_title if we don't
+        # already have a real title/channel from video_manifest.tsv or
+        # the older manifest files above.
+        if not rec.get("title"):
+            rec["title"] = row.get("title", "").strip()
         if not rec.get("channel"):
             rec["channel"] = row.get("channel_title", "").strip()
         rec["duration_s"] = to_number(row.get("duration_s")) or rec.get("duration_s")
         rec["content_category"] = row.get("content_category") or rec.get("content_category")
+        rec["target_age_group"] = row.get("target_age_group") or rec.get("target_age_group")
+        rec["popularity_tier"] = row.get("popularity_tier") or rec.get("popularity_tier")
         for feature in COMPREHENSIVE_FEATURES:
             if feature in row and row[feature] not in (None, ""):
                 rec[feature] = to_number(row[feature])
@@ -254,6 +283,8 @@ def finalize_video(rec):
         "content_topic": derive_topic(rec.get("title", ""), rec.get("channel", "")),
         "era": era_for(rec),
         "duration_s": rec.get("duration_s"),
+        "target_age_group": rec.get("target_age_group") or None,
+        "popularity_tier": rec.get("popularity_tier") or None,
         "composite_percentile": composite_percentile(taxonomy),
         "taxonomy": taxonomy,
     }
@@ -290,7 +321,7 @@ def write_data_js(videos, out_path, coverage, source_label):
     }
     payload = {"meta": meta, "videos": videos}
     js = "/**\n * Auto-generated by scripts/build_dataset_comprehensive.py (EXPERIMENTAL) — do not hand-edit.\n */\n\n"
-    js += "const SITE_DATA = " + json.dumps(payload, indent=4) + ";\n"
+    js += "const SITE_DATA = " + json.dumps(payload, separators=(",", ":")) + ";\n"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(js, encoding="utf-8")
     print(f"Wrote {out_path} ({len(videos)} videos)")
@@ -301,6 +332,10 @@ def main():
     parser.add_argument("--repo", type=Path, required=True, help="Path to a local clone of the research repo")
     parser.add_argument("--comprehensive-file", default="comprehensive-features.tsv",
                          help="Filename (inside repo/data/) of the new consolidated feature file")
+    parser.add_argument("--video-manifest", type=Path, default=None,
+                         help="Path to the pipeline's own video_manifest.tsv, the authoritative full-corpus "
+                              "title source. Strongly recommended -- without it, titles fall back to the "
+                              "older, much smaller anchor/expansion/historical manifest files.")
     parser.add_argument("--out", type=Path, required=True,
                          help="Where to write the test data.js. Point this at a THROWAWAY path first, "
                               "e.g. /tmp/data_test.js -- NOT assets/js/data.js, until you've reviewed the result.")
@@ -310,7 +345,7 @@ def main():
     if not data_dir.exists():
         sys.exit(f"ERROR: {data_dir} does not exist.")
 
-    records = load_and_join(data_dir, args.comprehensive_file)
+    records = load_and_join(data_dir, args.comprehensive_file, args.video_manifest)
     if not records:
         sys.exit("ERROR: no records found.")
 

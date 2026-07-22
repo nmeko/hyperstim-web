@@ -274,9 +274,20 @@
     gap: 0.25rem;
 }
 
+#clear-filters-button {
+    align-self: flex-end;
+    margin-bottom: 1px;
+}
+
 #result-count {
-    color: var(--muted);
-    font-size: 0.9rem;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    margin-left: auto;
+    padding: 0.4rem 0.85rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
 }
 
 /* =========================================================

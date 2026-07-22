@@ -184,6 +184,20 @@
         </label>
 
         <label>
+            Age Group
+            <select id="age-filter">
+                <option value="">All ages</option>
+            </select>
+        </label>
+
+        <label>
+            Channel Size
+            <select id="popularity-filter">
+                <option value="">All sizes</option>
+            </select>
+        </label>
+
+        <label>
             Sort
             <select id="sort-select">
                 <option value="intense-first">Most intense first</option>
@@ -191,6 +205,8 @@
                 <option value="alphabetical">Alphabetical</option>
             </select>
         </label>
+
+        <button type="button" id="clear-filters-button" class="secondary" hidden>Clear filters</button>
 
         <span id="result-count" aria-live="polite"></span>
     </div>

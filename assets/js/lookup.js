@@ -6,16 +6,25 @@
 
 let activeVideos = SITE_DATA.videos.slice();
 
-// Mobile pagination: small screens show 5 videos at a time with a "Show
-// more" button, rather than the full grid, so a long result list doesn't
-// overload the page on a phone. Desktop/tablet is unaffected. Resets to
-// 5 whenever the underlying result set changes (new search/filter).
+// Pagination: renders a bounded batch of cards with a "Show more" button,
+// rather than the full result set at once. This used to be mobile-only
+// (5 at a time) when the dataset was 189 videos and rendering everything
+// on desktop was harmless. At the current dataset size (5000+), rendering
+// every card unconditionally on desktop was measured at nearly 2 seconds
+// of blocking JS work before the page became interactive -- so desktop
+// now paginates too, just with a much larger page size. Resets whenever
+// the underlying result set changes (new search/filter).
 const MOBILE_PAGE_SIZE = 5;
+const DESKTOP_PAGE_SIZE = 30;
 const MOBILE_BREAKPOINT = "(max-width: 600px)";
-let mobileVisibleCount = MOBILE_PAGE_SIZE;
+let visibleCount = DESKTOP_PAGE_SIZE;
 
 function isMobileViewport() {
     return typeof window.matchMedia === "function" && window.matchMedia(MOBILE_BREAKPOINT).matches;
+}
+
+function currentPageSize() {
+    return isMobileViewport() ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE;
 }
 
 /* =========================================================
@@ -28,7 +37,10 @@ const button = document.getElementById("lookup-button");
 const dropZone = document.getElementById("drop-zone");
 const dropStatus = document.getElementById("drop-status");
 const topicFilter = document.getElementById("topic-filter");
+const ageFilter = document.getElementById("age-filter");
+const popularityFilter = document.getElementById("popularity-filter");
 const sortSelect = document.getElementById("sort-select");
+const clearFiltersButton = document.getElementById("clear-filters-button");
 const resultCount = document.getElementById("result-count");
 
 const videoContainer = document.getElementById("video-container");
@@ -152,8 +164,8 @@ function renderCards(videos) {
             </article>
         `;
     } else {
-        const onMobile = isMobileViewport();
-        const visibleVideos = onMobile ? videos.slice(0, mobileVisibleCount) : videos;
+        const pageSize = currentPageSize();
+        const visibleVideos = videos.slice(0, visibleCount);
 
         visibleVideos.forEach(video => {
             const card = document.createElement("article");
@@ -163,14 +175,14 @@ function renderCards(videos) {
             attachHoverPreview(card, video);
         });
 
-        if (onMobile && videos.length > visibleVideos.length) {
+        if (videos.length > visibleVideos.length) {
             const remaining = videos.length - visibleVideos.length;
             const showMoreButton = document.createElement("button");
             showMoreButton.type = "button";
             showMoreButton.className = "secondary show-more-button";
-            showMoreButton.textContent = `Show ${Math.min(MOBILE_PAGE_SIZE, remaining)} more (${remaining} left)`;
+            showMoreButton.textContent = `Show ${Math.min(pageSize, remaining)} more (${remaining} left)`;
             showMoreButton.addEventListener("click", () => {
-                mobileVisibleCount += MOBILE_PAGE_SIZE;
+                visibleCount += currentPageSize();
                 renderCards(videos);
             });
             grid.appendChild(showMoreButton);
@@ -188,12 +200,65 @@ function renderCards(videos) {
 
 function populateTopicFilter() {
     if (!topicFilter) return;
-    const topics = Array.from(new Set(SITE_DATA.videos.map(deriveTopic))).sort();
-    topics.forEach(topic => {
+    const counts = {};
+    SITE_DATA.videos.forEach(v => {
+        const topic = deriveTopic(v);
+        counts[topic] = (counts[topic] || 0) + 1;
+    });
+    Object.keys(counts).sort().forEach(topic => {
         const option = document.createElement("option");
         option.value = topic;
-        option.textContent = topic;
+        option.textContent = `${topic} (${counts[topic].toLocaleString()})`;
         topicFilter.appendChild(option);
+    });
+}
+
+// Popularity tiers are a small, known set of raw values from the pipeline
+// (e.g. "tier1_10M+") -- map them to something readable rather than
+// showing the raw underscore-separated string.
+const POPULARITY_LABELS = {
+    tier1_10m: "Tier 1 (10M+ subscribers)",
+    tier2_1m: "Tier 2 (1M-10M subscribers)",
+    tier3_100k: "Tier 3 (100K-1M subscribers)",
+    tier4_10k: "Tier 4 (10K-100K subscribers)",
+};
+
+function prettifyFilterLabel(raw, knownLabels) {
+    const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const key = normalize(raw);
+    for (const [k, label] of Object.entries(knownLabels || {})) {
+        if (key.startsWith(normalize(k))) return label;
+    }
+    return raw.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function populateAgeFilter() {
+    if (!ageFilter) return;
+    const counts = {};
+    SITE_DATA.videos.forEach(v => {
+        if (!v.target_age_group) return;
+        counts[v.target_age_group] = (counts[v.target_age_group] || 0) + 1;
+    });
+    Object.keys(counts).sort().forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = `Ages ${value} (${counts[value].toLocaleString()})`;
+        ageFilter.appendChild(option);
+    });
+}
+
+function populatePopularityFilter() {
+    if (!popularityFilter) return;
+    const counts = {};
+    SITE_DATA.videos.forEach(v => {
+        if (!v.popularity_tier) return;
+        counts[v.popularity_tier] = (counts[v.popularity_tier] || 0) + 1;
+    });
+    Object.keys(counts).sort().forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = `${prettifyFilterLabel(value, POPULARITY_LABELS)} (${counts[value].toLocaleString()})`;
+        popularityFilter.appendChild(option);
     });
 }
 
@@ -203,14 +268,24 @@ function populateTopicFilter() {
 function populateVideoSuggestions() {
     const datalist = document.getElementById("video-suggestions");
     if (!datalist) return;
+
+    // Native browser <datalist> autocomplete can get sluggish with many
+    // thousands of options. Cap the total and prioritize: fully-scored
+    // video titles first (the most useful/complete results to search
+    // for), then unique channel names, up to the cap.
+    const SUGGESTION_CAP = 1000;
     const titles = new Set();
+    const channels = new Set();
+
     SITE_DATA.videos.forEach(video => {
-        if (video.title) titles.add(video.title);
-        if (video.channel) titles.add(video.channel);
+        if (video.title && video.composite_percentile !== null) titles.add(video.title);
+        if (video.channel) channels.add(video.channel);
     });
-    titles.forEach(title => {
+
+    const combined = [...titles, ...channels].slice(0, SUGGESTION_CAP);
+    combined.forEach(entry => {
         const option = document.createElement("option");
-        option.value = title;
+        option.value = entry;
         datalist.appendChild(option);
     });
 }
@@ -218,6 +293,8 @@ function populateVideoSuggestions() {
 function applyFiltersAndSort() {
     const query = (input.value || "").trim().toLowerCase();
     const topic = topicFilter ? topicFilter.value : "";
+    const age = ageFilter ? ageFilter.value : "";
+    const popularity = popularityFilter ? popularityFilter.value : "";
     const sortMode = sortSelect ? sortSelect.value : "intense-first";
 
     let videos = SITE_DATA.videos.filter(video => {
@@ -227,7 +304,9 @@ function applyFiltersAndSort() {
             video.channel.toLowerCase().includes(query) ||
             deriveTopic(video).toLowerCase().includes(query);
         const matchesTopic = !topic || deriveTopic(video) === topic;
-        return matchesQuery && matchesTopic;
+        const matchesAge = !age || video.target_age_group === age;
+        const matchesPopularity = !popularity || video.popularity_tier === popularity;
+        return matchesQuery && matchesTopic && matchesAge && matchesPopularity;
     });
 
     videos = videos.slice().sort((a, b) => {
@@ -237,8 +316,13 @@ function applyFiltersAndSort() {
         return sortMode === "calm-first" ? pa - pb : pb - pa;
     });
 
+    if (clearFiltersButton) {
+        const anyFilterActive = Boolean(query || topic || age || popularity);
+        clearFiltersButton.hidden = !anyFilterActive;
+    }
+
     activeVideos = videos;
-    mobileVisibleCount = MOBILE_PAGE_SIZE;
+    visibleCount = currentPageSize();
     renderCards(videos);
 }
 
@@ -467,9 +551,22 @@ if (input) {
     input.addEventListener("input", applyFiltersAndSort);
 }
 if (topicFilter) topicFilter.addEventListener("change", applyFiltersAndSort);
+if (ageFilter) ageFilter.addEventListener("change", applyFiltersAndSort);
+if (popularityFilter) popularityFilter.addEventListener("change", applyFiltersAndSort);
 if (sortSelect) sortSelect.addEventListener("change", applyFiltersAndSort);
+if (clearFiltersButton) {
+    clearFiltersButton.addEventListener("click", () => {
+        if (input) input.value = "";
+        if (topicFilter) topicFilter.value = "";
+        if (ageFilter) ageFilter.value = "";
+        if (popularityFilter) popularityFilter.value = "";
+        applyFiltersAndSort();
+    });
+}
 
 populateTopicFilter();
+populateAgeFilter();
+populatePopularityFilter();
 populateVideoSuggestions();
 applyFiltersAndSort();
 if (audienceNote) audienceNote.textContent = AUDIENCE_COPY.parent;
