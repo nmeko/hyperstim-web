@@ -217,7 +217,12 @@ def percentile_rank(value, all_values):
     if n <= 1:
         return 50.0
     below_or_equal = sum(1 for v in all_values if v <= value)
-    return round(100 * (below_or_equal - 1) / (n - 1), 1)
+    # Defensive clamp -- see live_analysis_api.py for why this matters
+    # there specifically (a live video's raw value isn't guaranteed to
+    # be part of its own comparison pool, unlike every value ranked
+    # here, which always is).
+    raw_pct = 100 * (below_or_equal - 1) / (n - 1)
+    return round(max(0.0, min(100.0, raw_pct)), 1)
 
 
 def compute_percentiles(records):

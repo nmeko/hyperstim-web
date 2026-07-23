@@ -32,8 +32,14 @@
     --focus-ring: 3px solid var(--primary);
 }
 
+/* Dark mode applies automatically by system preference, UNLESS the
+   person has explicitly chosen a theme (data-theme="light"/"dark" on
+   <html>, set by the toggle in the accessibility bar and persisted in
+   localStorage). An explicit choice always wins over the OS setting;
+   with no explicit choice, it follows the system setting exactly as
+   before, including any time-based auto-switching the OS itself does. */
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
         --bg: #1B1814;
         --surface: #242019;
         --surface-alt: #2E2820;
@@ -54,6 +60,31 @@
         --border: #3D362A;
         --shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
     }
+}
+
+/* Explicit override: applies these same dark values regardless of the
+   OS setting, when the person has specifically chosen dark mode via
+   the toggle (rather than just inheriting it from prefers-color-scheme). */
+html[data-theme="dark"] {
+    --bg: #1B1814;
+    --surface: #242019;
+    --surface-alt: #2E2820;
+    --text: #EDE7DA;
+    --muted: #B0A690;
+
+    --primary: #7FB09E;
+    --primary-hover: #98C2B2;
+
+    --accent-a: #7FB09E;
+    --accent-b: #E0A870;
+
+    --good: #3fbf5f;
+    --moderate: #e0a940;
+    --extreme: #e0554a;
+    --unknown: #8a929e;
+
+    --border: #3D362A;
+    --shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 html[data-contrast="high"] {

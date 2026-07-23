@@ -343,6 +343,7 @@ function initAccessibilityBar() {
 
     const FONT_SIZE_KEY = "hyperstim_font_size";
     const CONTRAST_KEY = "hyperstim_contrast";
+    const THEME_KEY = "hyperstim_theme";
 
     function readSavedFontSize() {
         const saved = parseInt(localStorage.getItem(FONT_SIZE_KEY), 10);
@@ -355,6 +356,7 @@ function initAccessibilityBar() {
     const reset = document.getElementById("text-reset");
     const larger = document.getElementById("text-larger");
     const contrast = document.getElementById("contrast-toggle");
+    const theme = document.getElementById("theme-toggle");
 
     function applyFontSize() {
         html.style.fontSize = `${currentFontSize}px`;
@@ -401,6 +403,35 @@ function initAccessibilityBar() {
             html.dataset.contrast = next ? "high" : "";
             contrast.setAttribute("aria-pressed", String(next));
             localStorage.setItem(CONTRAST_KEY, next ? "high" : "");
+        });
+    }
+
+    if (theme) {
+        // "auto" (the default, and what a never-touched visitor gets) means
+        // explicitly follow the OS/browser's own prefers-color-scheme --
+        // including whatever time-based auto-switching the OS itself does.
+        // "light"/"dark" are explicit choices that override the OS setting
+        // and persist across pages and future visits, until changed again.
+        const THEME_LABELS = { auto: "Theme: Auto", light: "Theme: Light", dark: "Theme: Dark" };
+        const THEME_CYCLE = ["auto", "light", "dark"];
+
+        function applyTheme(value) {
+            if (value === "auto") {
+                delete html.dataset.theme;
+            } else {
+                html.dataset.theme = value;
+            }
+            theme.textContent = THEME_LABELS[value];
+            localStorage.setItem(THEME_KEY, value);
+        }
+
+        const savedTheme = localStorage.getItem(THEME_KEY);
+        applyTheme(THEME_CYCLE.includes(savedTheme) ? savedTheme : "auto");
+
+        theme.addEventListener("click", () => {
+            const current = localStorage.getItem(THEME_KEY) || "auto";
+            const nextIndex = (THEME_CYCLE.indexOf(current) + 1) % THEME_CYCLE.length;
+            applyTheme(THEME_CYCLE[nextIndex]);
         });
     }
 }

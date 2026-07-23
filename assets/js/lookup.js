@@ -343,17 +343,24 @@ function findVideo(rawInput) {
     ) || null;
 }
 
-function renderVideoPanel(video, notFoundQuery) {
+function renderVideoPanel(video, notFoundQuery, query) {
     if (!video) {
-        videoContainer.innerHTML = notFoundQuery
-            ? ""
-            : `<div class="panel-placeholder">Search above, or choose "View Full Details" on a video below.</div>`;
+        if (notFoundQuery) {
+            videoContainer.innerHTML = "";
+            const offered = offerLiveAnalysis(query, videoContainer);
+            if (!offered) {
+                videoContainer.innerHTML = `<div class="panel-placeholder">${mascotSVG(56)}<p>This video isn't in the current dataset.</p></div>`;
+            }
+        } else {
+            videoContainer.innerHTML = `<div class="panel-placeholder">Search above, or choose "View Full Details" on a video below.</div>`;
+        }
         ratingContainer.innerHTML = notFoundQuery
             ? `
                 <div class="not-found">
                     <h3>This video hasn't been measured by this dataset yet</h3>
-                    <p>Only videos the research pipeline has already processed can be scored. This tool
-                    does not analyze new video content on demand.</p>
+                    <p>Only videos the research pipeline has already processed have a permanent
+                    dataset score. A live, one-time analysis is available above for videos that
+                    aren't in the dataset yet.</p>
                 </div>
               `
             : "";
@@ -415,8 +422,8 @@ function renderDetailsPanel(video) {
 // Unified update path: used by search/paste lookup, drag-and-drop, the
 // "View Full Details" button on a card, and hash-based deep links. Updates
 // the video panel and the details panel together, per the split-screen spec.
-function showDetails(video, notFoundQuery) {
-    renderVideoPanel(video, notFoundQuery);
+function showDetails(video, notFoundQuery, query) {
+    renderVideoPanel(video, notFoundQuery, query);
     renderDetailsPanel(video);
 
     if (video) {
@@ -429,7 +436,7 @@ function showDetails(video, notFoundQuery) {
 function runLookup() {
     const query = input.value;
     const video = findVideo(query);
-    showDetails(video, !video && query.trim().length > 0);
+    showDetails(video, !video && query.trim().length > 0, query);
 }
 
 /* =========================================================
