@@ -24,7 +24,7 @@
 // this must be filled in with your real address before this does
 // anything, and works safely as a no-op (button never appears) if left
 // unconfigured on a fresh checkout.
-const LIVE_ANALYSIS_API_BASE = "https://YOUR-VM-ADDRESS-HERE:8420";
+const LIVE_ANALYSIS_API_BASE = "https://hyperstimulation.cis240515.projects.jetstream-cloud.org";
 
 const POLL_INTERVAL_MS = 2500;
 const MAX_POLL_ATTEMPTS = 40; // ~100s ceiling before giving up client-side
