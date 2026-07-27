@@ -807,28 +807,24 @@ body:has(#compare-tray) {
     font-size: 0.9rem;
 }
 
-@media (min-width: 1000px) {
-    .toc {
-        float: right;
-        width: 200px;
-        margin: 0 0 1rem 2rem;
-        position: sticky;
-        top: calc(var(--sticky-header-height, 5rem) + 1rem);
-    }
-}
+/* Below the wide-screen threshold, the TOC is just a plain block above
+   the content -- same as mobile. It deliberately never floats within
+   the content column at these widths, since that's exactly what was
+   causing it to overlap and block the actual text. */
 
 /* On screens wide enough to have real margin space beyond the centered
    1200px content column, move the TOC fully into that margin instead
    of floating it within the column -- so it never crowds or wraps
    against the actual reading text. Below this width there isn't
-   reliably enough margin room, so it falls back to the float-right
-   behavior above instead. */
-@media (min-width: 1700px) {
+   reliably enough margin room, so it stays a plain block above the
+   content instead (see above) rather than floating into the text. */
+@media (min-width: 1650px) {
     .toc {
         float: none;
+        width: 190px;
         position: fixed;
         top: calc(var(--sticky-header-height, 5rem) + 1.5rem);
-        right: 1.5rem;
+        right: 1rem;
         margin: 0;
         max-height: calc(100vh - var(--sticky-header-height, 5rem) - 3rem);
         overflow-y: auto;
