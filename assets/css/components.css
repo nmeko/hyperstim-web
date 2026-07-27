@@ -111,6 +111,7 @@
     position: absolute;
     bottom: 130%;
     left: 50%;
+    z-index: 100;
     transform: translateX(-50%);
     background: var(--text);
     color: var(--bg);
@@ -990,7 +991,21 @@ html[data-theme="dark"] .score-meter-marker {
 .matrix-category-group {
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    overflow: hidden;
+}
+
+.matrix-category-header {
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
+}
+
+.matrix-type-row:last-child {
+    border-bottom-left-radius: var(--radius);
+    border-bottom-right-radius: var(--radius);
+}
+
+.matrix-type-row:last-child summary {
+    border-bottom-left-radius: var(--radius);
+    border-bottom-right-radius: var(--radius);
 }
 
 .matrix-category-header {
