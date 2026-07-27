@@ -406,15 +406,32 @@ function renderDetailsPanel(video) {
           `
         : "";
 
+    const band = bandFor(video.composite_percentile);
+    const calmerAlt = band.class === "extreme" ? findCalmerAlternative(video) : null;
+    const calmerAltHTML = calmerAlt
+        ? `
+            <div class="calmer-alternative-suggestion">
+                <p><strong>Looking for something calmer?</strong> This video scores high on production intensity. Here's a similar video with meaningfully less:</p>
+                <a class="secondary" href="index.html#v=${calmerAlt.video_id}">
+                    View "${calmerAlt.title}"
+                </a>
+                <a class="secondary" href="compare.html#a=${video.video_id}&b=${calmerAlt.video_id}">
+                    Compare the two directly
+                </a>
+            </div>
+          `
+        : "";
+
     detailsPanel.innerHTML = `
         <h3>${video.title}</h3>
         <p class="video-channel">${video.channel} &middot; ${video.era || ""}</p>
-        ${compositeBadgeHTML(video)}
+        ${scoreMeterHTML(video)}
         ${distributionMarkerHTML(video.composite_percentile)}
         <button type="button" class="secondary copy-link-button">Copy Link to This Result</button>
-        <div class="type-breakdown">
-            ${typeBreakdownHTML(video)}
+        <div class="category-matrix">
+            ${categoryMatrixHTML(video)}
         </div>
+        ${calmerAltHTML}
         ${similarHTML}
     `;
 }
@@ -428,9 +445,21 @@ function showDetails(video, notFoundQuery, query) {
 
     if (video) {
         location.hash = `v=${video.video_id}`;
+        scrollResultsIntoView();
     } else if (history.replaceState) {
         history.replaceState(null, "", location.pathname + location.search);
     }
+}
+
+// Scrolls the results area into view after a selection, so a person
+// doesn't have to notice on their own that something appeared below
+// the fold. Instant (not smooth) for anyone with reduced-motion set.
+function scrollResultsIntoView() {
+    const workspace = document.getElementById("workspace");
+    if (!workspace) return;
+    const prefersReducedMotion = typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    workspace.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
 }
 
 function runLookup() {

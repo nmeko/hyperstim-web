@@ -195,8 +195,77 @@ function compositeBadgeHTML(video) {
     `;
 }
 
-// A single "Category: Band (score)" line with an info icon explaining
-// that category, for compact contexts like the card grid's score list.
+// A large, glanceable gauge for the single-video details panel. The small
+// rating-badge circle used elsewhere (cards, live-analysis results) reads
+// fine in a compact grid, but doesn't communicate "how bad is this" at a
+// first-glance level on its own -- this puts the number on a full-width
+// gradient track with a marker, so position + color + text all agree,
+// and pairs it with the same shape icon used everywhere else (never
+// relying on color alone).
+function scoreMeterHTML(video) {
+    const pct = video.composite_percentile;
+    const band = bandFor(pct);
+    if (pct === null || pct === undefined || Number.isNaN(pct)) {
+        return `
+            <div class="score-meter score-meter-unknown">
+                <p>Not enough data yet to place this video on the scale.</p>
+            </div>
+        `;
+    }
+    const clamped = Math.max(0, Math.min(100, Math.round(pct)));
+    return `
+        <div class="score-meter">
+            <div class="score-meter-header">
+                <span class="score-meter-value">${clamped}<span class="score-meter-unit">%</span></span>
+                <span class="rating-badge rating-${band.class}">
+                    ${formatBand(band, pct)}
+                    ${infoIconHTML(COMPOSITE_SCORE_EXPLANATION, "What does the overall score mean?")}
+                </span>
+            </div>
+            <div class="score-meter-track" role="img" aria-label="${clamped} percent, ${band.label}">
+                <div class="score-meter-marker" style="left: ${clamped}%;"></div>
+            </div>
+            <div class="score-meter-scale">
+                <span>Calm</span>
+                <span>Typical</span>
+                <span>Extreme</span>
+            </div>
+        </div>
+    `;
+}
+
+// A grouped matrix showing all 3 categories and their subcategories at
+// once, so it's clear at a glance which pattern types belong to which
+// category -- rather than a flat list where that grouping isn't visible.
+function categoryMatrixHTML(video) {
+    return Object.entries(TAXONOMY_SCHEMA).map(([catKey, cat]) => {
+        const catPct = categoryPercentile(video, catKey);
+        const catBand = bandFor(catPct);
+        const rows = Object.entries(cat.types).map(([typeKey, typeSchema]) => {
+            const entry = video.taxonomy?.[catKey]?.types?.[typeKey];
+            const pct = entry ? entry.percentile : null;
+            const band = bandFor(pct);
+            return `
+                <div class="matrix-type-row">
+                    <span class="matrix-type-label">${typeSchema.label}</span>
+                    <span class="rating-badge rating-${band.class}">${formatBand(band, pct)}</span>
+                </div>
+            `;
+        }).join("");
+
+        return `
+            <div class="matrix-category-group">
+                <div class="matrix-category-header">
+                    <h4>${cat.label}</h4>
+                    <span class="rating-badge rating-${catBand.class}">${formatBand(catBand, catPct)}</span>
+                </div>
+                <div class="matrix-type-rows">
+                    ${rows}
+                </div>
+            </div>
+        `;
+    }).join("");
+}
 function categoryScoreLineHTML(video, categoryKey) {
     const pct = categoryPercentile(video, categoryKey);
     const band = bandFor(pct);
@@ -493,6 +562,42 @@ function initHeaderAutoHide() {
     });
 }
 
+// Hides just the accessibility toolbar (text size, contrast, theme
+// controls) on scroll-down, on every screen size -- unlike the header
+// hide above, which is mobile-only and hides the whole header
+// including the nav/logo. The toolbar is a secondary control panel;
+// reclaiming its space while scrolling is worth doing everywhere, not
+// just on small screens, while primary navigation stays put.
+function initAccessibilityToolbarAutoHide() {
+    const toolbar = document.getElementById("accessibility-toolbar");
+    if (!toolbar) return;
+
+    const HIDE_THRESHOLD = 80;
+    let lastScrollY = window.scrollY || 0;
+    let ticking = false;
+
+    function handleScroll() {
+        const currentY = window.scrollY || 0;
+        const scrollingDown = currentY > lastScrollY;
+
+        if (scrollingDown && currentY > HIDE_THRESHOLD) {
+            toolbar.classList.add("toolbar-hidden");
+        } else if (!scrollingDown) {
+            toolbar.classList.remove("toolbar-hidden");
+        }
+
+        lastScrollY = currentY;
+        ticking = false;
+    }
+
+    window.addEventListener("scroll", () => {
+        if (!ticking) {
+            requestAnimationFrame(handleScroll);
+            ticking = true;
+        }
+    });
+}
+
 /* =========================================================
    11. First-visit onboarding walkthrough
 ========================================================= */
@@ -592,6 +697,32 @@ function findSimilarVideo(video) {
 
     const differentEra = sameTopic.filter(v => v.era !== video.era);
     const pool = differentEra.length ? differentEra : sameTopic;
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// Finds a same-topic video that's meaningfully calmer (at least 20
+// percentile points lower), not just any lower number -- a 3-point
+// difference wouldn't be a useful "alternative" to suggest. Picks
+// randomly among the calmest few qualifying options, so repeat visits
+// to the same high-stimulation video don't always surface the exact
+// same single suggestion.
+const CALMER_ALTERNATIVE_MIN_GAP = 20;
+
+function findCalmerAlternative(video) {
+    if (video.composite_percentile === null || video.composite_percentile === undefined) return null;
+    const topic = deriveTopic(video);
+    const candidates = SITE_DATA.videos
+        .filter(v =>
+            v.video_id !== video.video_id &&
+            deriveTopic(v) === topic &&
+            v.composite_percentile !== null &&
+            v.composite_percentile !== undefined &&
+            video.composite_percentile - v.composite_percentile >= CALMER_ALTERNATIVE_MIN_GAP
+        )
+        .sort((a, b) => a.composite_percentile - b.composite_percentile);
+
+    if (!candidates.length) return null;
+    const pool = candidates.slice(0, Math.min(3, candidates.length));
     return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -849,6 +980,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initScrollReveal();
     updateStickyHeaderOffset();
     initHeaderAutoHide();
+    initAccessibilityToolbarAutoHide();
     initBackToTop();
     initOnboarding();
     initVideoRetryHandlers();

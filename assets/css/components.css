@@ -904,3 +904,142 @@ html[data-contrast="high"] .matrix-cell.diff-highlight {
     border-radius: 999px;
     margin-bottom: 0.75rem;
 }
+
+/* =========================================================
+   Score meter (details panel) — a large, glanceable gauge
+========================================================= */
+
+.score-meter {
+    margin: 1rem 0 1.25rem;
+}
+
+.score-meter-unknown {
+    color: var(--muted);
+    font-style: italic;
+}
+
+.score-meter-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.score-meter-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text);
+}
+
+.score-meter-unit {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.score-meter-track {
+    position: relative;
+    height: 16px;
+    border-radius: 999px;
+    background: linear-gradient(to right, var(--good), var(--moderate), var(--extreme));
+    margin: 0.5rem 0 0.35rem;
+}
+
+.score-meter-marker {
+    position: absolute;
+    top: 50%;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--text);
+    transform: translate(-50%, -50%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .score-meter-marker {
+    background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+    .score-meter-marker:not(html[data-theme="light"] *) {
+        background: var(--bg);
+    }
+}
+
+.score-meter-scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+/* =========================================================
+   Category matrix (details panel) — groups all 10 pattern
+   types under their 3 parent categories at a glance
+========================================================= */
+
+.category-matrix {
+    display: grid;
+    gap: 1rem;
+    margin: 1.25rem 0;
+}
+
+.matrix-category-group {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.matrix-category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface-alt);
+    flex-wrap: wrap;
+}
+
+.matrix-category-header h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.matrix-type-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.matrix-type-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+
+.matrix-type-label {
+    font-size: 0.9rem;
+}
+
+.calmer-alternative-suggestion {
+    background: var(--surface);
+    border: 1px solid var(--good);
+    border-left-width: 4px;
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+}
+
+.calmer-alternative-suggestion p {
+    margin: 0 0 0.75rem;
+}
+
+.calmer-alternative-suggestion a {
+    margin-right: 0.5rem;
+}

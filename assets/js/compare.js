@@ -359,6 +359,19 @@ function renderComparison() {
     renderComparisonChart(videoA, videoB);
     updateHashFromSelection();
     updateProgress(true);
+    scrollResultsIntoView();
+}
+
+// Scrolls the results area into view after both videos are selected,
+// so a person doesn't have to notice on their own that results
+// appeared below the fold. Instant (not smooth) for anyone with
+// reduced-motion set.
+function scrollResultsIntoView() {
+    const results = document.getElementById("compare-results");
+    if (!results) return;
+    const prefersReducedMotion = typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    results.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
 }
 
 /* =========================================================
