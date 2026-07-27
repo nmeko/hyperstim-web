@@ -237,6 +237,43 @@ function scoreMeterHTML(video) {
 // A grouped matrix showing all 3 categories and their subcategories at
 // once, so it's clear at a glance which pattern types belong to which
 // category -- rather than a flat list where that grouping isn't visible.
+// Turns a raw snake_case feature key (e.g. "cuts_per_min") into a
+// readable label ("Cuts Per Min") without needing a separate lookup
+// table for all 13 features.
+function readableFeatureName(key) {
+    return key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function ordinalSuffix(n) {
+    const remainder100 = n % 100;
+    if (remainder100 >= 11 && remainder100 <= 13) return "th";
+    switch (n % 10) {
+        case 1: return "st";
+        case 2: return "nd";
+        case 3: return "rd";
+        default: return "th";
+    }
+}
+
+function featureDetailRowsHTML(entry) {
+    const features = entry && entry.features ? entry.features : {};
+    const rows = Object.entries(features).map(([key, f]) => {
+        const pct = f ? f.percentile : null;
+        const value = f && f.value !== null && f.value !== undefined ? f.value : null;
+        const roundedPct = pct !== null ? Math.round(pct) : null;
+        const pctText = roundedPct !== null ? `${roundedPct}${ordinalSuffix(roundedPct)} percentile` : "Not enough data";
+        const valueText = value !== null ? value : "n/a";
+        return `
+            <div class="matrix-feature-row">
+                <span class="matrix-feature-name">${readableFeatureName(key)}</span>
+                <span class="matrix-feature-value">${valueText}</span>
+                <span class="matrix-feature-percentile">${pctText}</span>
+            </div>
+        `;
+    }).join("");
+    return rows || `<p class="matrix-feature-empty">No measured features for this type yet.</p>`;
+}
+
 function categoryMatrixHTML(video) {
     return Object.entries(TAXONOMY_SCHEMA).map(([catKey, cat]) => {
         const catPct = categoryPercentile(video, catKey);
@@ -246,13 +283,18 @@ function categoryMatrixHTML(video) {
             const pct = entry ? entry.percentile : null;
             const band = bandFor(pct);
             return `
-                <div class="matrix-type-row">
-                    <span class="matrix-type-label-group">
-                        <span class="matrix-type-label">${typeSchema.label}</span>
-                        ${infoIconHTML(typeSchema.explanation, `Why does ${typeSchema.label} get this rating?`)}
-                    </span>
-                    <span class="rating-badge rating-${band.class}">${formatBand(band, pct)}</span>
-                </div>
+                <details class="matrix-type-row">
+                    <summary>
+                        <span class="matrix-type-label-group">
+                            <span class="matrix-type-label">${typeSchema.label}</span>
+                            ${infoIconHTML(typeSchema.explanation, `Why does ${typeSchema.label} get this rating?`)}
+                        </span>
+                        <span class="rating-badge rating-${band.class}">${formatBand(band, pct)}</span>
+                    </summary>
+                    <div class="matrix-feature-detail">
+                        ${featureDetailRowsHTML(entry)}
+                    </div>
+                </details>
             `;
         }).join("");
 

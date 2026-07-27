@@ -1014,13 +1014,22 @@ html[data-theme="dark"] .score-meter-marker {
 }
 
 .matrix-type-row {
+    border-top: 1px solid var(--border);
+}
+
+.matrix-type-row summary {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
     padding: 0.6rem 1rem;
-    border-top: 1px solid var(--border);
     flex-wrap: wrap;
+    cursor: pointer;
+    list-style-position: outside;
+}
+
+.matrix-type-row summary::-webkit-details-marker {
+    color: var(--muted);
 }
 
 .matrix-type-label {
@@ -1036,6 +1045,40 @@ html[data-theme="dark"] .score-meter-marker {
 
 .matrix-category-label-group h4 {
     margin: 0;
+}
+
+.matrix-feature-detail {
+    padding: 0.25rem 1rem 0.75rem 2.25rem;
+    background: var(--surface);
+}
+
+.matrix-feature-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.3rem 0;
+    font-size: 0.82rem;
+    flex-wrap: wrap;
+}
+
+.matrix-feature-name {
+    color: var(--muted);
+    min-width: 140px;
+}
+
+.matrix-feature-value {
+    font-weight: 600;
+}
+
+.matrix-feature-percentile {
+    color: var(--muted);
+    margin-left: auto;
+}
+
+.matrix-feature-empty {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0.3rem 0;
 }
 
 .calmer-alternative-suggestion {
