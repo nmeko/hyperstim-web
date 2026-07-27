@@ -817,6 +817,24 @@ body:has(#compare-tray) {
     }
 }
 
+/* On screens wide enough to have real margin space beyond the centered
+   1200px content column, move the TOC fully into that margin instead
+   of floating it within the column -- so it never crowds or wraps
+   against the actual reading text. Below this width there isn't
+   reliably enough margin room, so it falls back to the float-right
+   behavior above instead. */
+@media (min-width: 1700px) {
+    .toc {
+        float: none;
+        position: fixed;
+        top: calc(var(--sticky-header-height, 5rem) + 1.5rem);
+        right: 1.5rem;
+        margin: 0;
+        max-height: calc(100vh - var(--sticky-header-height, 5rem) - 3rem);
+        overflow-y: auto;
+    }
+}
+
 @media print {
     .toc { display: none !important; }
 }
