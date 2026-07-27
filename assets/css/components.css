@@ -111,7 +111,6 @@
     position: absolute;
     bottom: 130%;
     left: 50%;
-    z-index: 100;
     transform: translateX(-50%);
     background: var(--text);
     color: var(--bg);
@@ -128,7 +127,15 @@
     visibility: hidden;
     pointer-events: none;
     transition: opacity 0.15s ease;
-    z-index: 60;
+    z-index: 100;
+}
+
+/* Pops downward instead of upward -- for tooltips that sit at the very
+   top of a scrollable container (like the category matrix headers,
+   inside #details-panel's scrollable area) and have no room above them. */
+.info-tooltip.info-tooltip-below {
+    bottom: auto;
+    top: 130%;
 }
 
 .info-icon:hover .info-tooltip,

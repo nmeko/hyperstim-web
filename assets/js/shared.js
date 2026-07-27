@@ -168,11 +168,12 @@ function distributionMarkerHTML(percentile) {
    labeled element.
 ========================================================= */
 
-function infoIconHTML(explanationText, ariaLabel = "What does this score mean?") {
+function infoIconHTML(explanationText, ariaLabel = "What does this score mean?", direction = "up") {
+    const directionClass = direction === "down" ? " info-tooltip-below" : "";
     return `
         <span class="info-icon" tabindex="0" role="button" aria-label="${ariaLabel}">
             <span aria-hidden="true">?</span>
-            <span class="info-tooltip" role="tooltip">${explanationText}</span>
+            <span class="info-tooltip${directionClass}" role="tooltip">${explanationText}</span>
         </span>
     `;
 }
@@ -303,7 +304,7 @@ function categoryMatrixHTML(video) {
                 <div class="matrix-category-header">
                     <span class="matrix-category-label-group">
                         <h4>${cat.label}</h4>
-                        ${infoIconHTML(cat.intro, `What does ${cat.label} measure?`)}
+                        ${infoIconHTML(cat.intro, `What does ${cat.label} measure?`, "down")}
                     </span>
                     <span class="rating-badge rating-${catBand.class}">${formatBand(catBand, catPct)}</span>
                 </div>
