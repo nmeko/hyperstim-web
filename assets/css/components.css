@@ -1027,6 +1027,17 @@ html[data-theme="dark"] .score-meter-marker {
     font-size: 0.9rem;
 }
 
+.matrix-type-label-group,
+.matrix-category-label-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.matrix-category-label-group h4 {
+    margin: 0;
+}
+
 .calmer-alternative-suggestion {
     background: var(--surface);
     border: 1px solid var(--good);

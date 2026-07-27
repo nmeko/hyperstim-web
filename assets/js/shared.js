@@ -247,7 +247,10 @@ function categoryMatrixHTML(video) {
             const band = bandFor(pct);
             return `
                 <div class="matrix-type-row">
-                    <span class="matrix-type-label">${typeSchema.label}</span>
+                    <span class="matrix-type-label-group">
+                        <span class="matrix-type-label">${typeSchema.label}</span>
+                        ${infoIconHTML(typeSchema.explanation, `Why does ${typeSchema.label} get this rating?`)}
+                    </span>
                     <span class="rating-badge rating-${band.class}">${formatBand(band, pct)}</span>
                 </div>
             `;
@@ -256,7 +259,10 @@ function categoryMatrixHTML(video) {
         return `
             <div class="matrix-category-group">
                 <div class="matrix-category-header">
-                    <h4>${cat.label}</h4>
+                    <span class="matrix-category-label-group">
+                        <h4>${cat.label}</h4>
+                        ${infoIconHTML(cat.intro, `What does ${cat.label} measure?`)}
+                    </span>
                     <span class="rating-badge rating-${catBand.class}">${formatBand(catBand, catPct)}</span>
                 </div>
                 <div class="matrix-type-rows">
