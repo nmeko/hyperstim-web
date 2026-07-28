@@ -391,9 +391,19 @@ function pickRandom(arr) {
 // Random pick from `videos`, preferring ones with any real coverage.
 // Falls back to the full group only when none of them have coverage yet.
 function pickRandomPreferCovered(videos) {
-    const covered = videos.filter(v => typeCoverageCount(v) > 0);
-    const pool = covered.length ? covered : videos;
-    return pickRandom(pool);
+    // Require FULL coverage (every pattern type scored), not just "at
+    // least one type scored" -- a video missing most of its scores
+    // isn't a good example for a new user's first look at Compare,
+    // especially paired against a fully-scored video on the other side.
+    const totalTypes = SITE_DATA.videos.length ? allTypeEntries(SITE_DATA.videos[0]).length : 10;
+    const fullyScored = videos.filter(v => typeCoverageCount(v) === totalTypes);
+    if (fullyScored.length) return pickRandom(fullyScored);
+
+    // Fallback, only reached if a pool genuinely has zero fully-scored
+    // videos (shouldn't happen at this dataset's current ~96% coverage,
+    // but stay functional rather than returning nothing if it ever does).
+    const partiallyScored = videos.filter(v => typeCoverageCount(v) > 0);
+    return pickRandom(partiallyScored.length ? partiallyScored : videos);
 }
 
 function computePreset() {
@@ -405,6 +415,25 @@ function computePreset() {
     const contemporary = SITE_DATA.videos.filter(v => !v.era || v.era === "Contemporary");
 
     if (!historical.length || !contemporary.length) return null;
+
+    const totalTypes = SITE_DATA.videos.length ? allTypeEntries(SITE_DATA.videos[0]).length : 10;
+    const historicalHasFullyScored = historical.some(v => typeCoverageCount(v) === totalTypes);
+
+    if (!historicalHasFullyScored) {
+        // The historical set currently has no fully-scored videos under
+        // this schema (a real, separate data gap, not a bug here) --
+        // rather than ever pairing a zero-coverage video against a
+        // fully-scored one, fall back to two fully-scored contemporary
+        // videos so the "never mix full vs. not-yet-computed" guarantee
+        // still holds, even though it means giving up the historical
+        // framing for this particular preset click.
+        const fullyScoredContemporary = contemporary.filter(v => typeCoverageCount(v) === totalTypes);
+        const pool = fullyScoredContemporary.length >= 2 ? fullyScoredContemporary : contemporary;
+        const first = pickRandom(pool);
+        const rest = pool.filter(v => v.video_id !== first.video_id);
+        const second = rest.length ? pickRandom(rest) : first;
+        return { repHistorical: first, repContemporary: second };
+    }
 
     return {
         repHistorical: pickRandomPreferCovered(historical),

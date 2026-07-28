@@ -579,19 +579,37 @@ function initHeaderAutoHide() {
 
     const MOBILE_QUERY = "(max-width: 600px)";
     const HIDE_THRESHOLD = 80; // don't hide on tiny, incidental scrolls
-    let lastScrollY = window.scrollY || 0;
+    const MIN_DELTA = 10; // ignore scroll jitter smaller than this -- see
+                           // note below on why this exists.
+    let lastDirectionY = window.scrollY || 0; // position at the last real
+                                                // direction change, not the
+                                                // last raw scroll event
     let ticking = false;
 
     function handleScroll() {
         if (!window.matchMedia(MOBILE_QUERY).matches) {
             header.classList.remove("header-hidden");
-            lastScrollY = window.scrollY || 0;
+            lastDirectionY = window.scrollY || 0;
             ticking = false;
             return;
         }
 
         const currentY = window.scrollY || 0;
-        const scrollingDown = currentY > lastScrollY;
+        const delta = currentY - lastDirectionY;
+
+        // Comparing every raw scroll event to the immediately previous one
+        // (no minimum movement required) made the header flicker rapidly
+        // once a person stopped scrolling: momentum/rubber-band scrolling
+        // keeps firing tiny back-and-forth scroll events even while
+        // "stopped", and each one flipped the direction and re-toggled the
+        // class. Requiring a real MIN_DELTA of net movement before acting
+        // filters that jitter out while staying responsive to real scrolls.
+        if (Math.abs(delta) < MIN_DELTA) {
+            ticking = false;
+            return;
+        }
+
+        const scrollingDown = delta > 0;
 
         if (scrollingDown && currentY > HIDE_THRESHOLD) {
             header.classList.add("header-hidden");
@@ -599,7 +617,7 @@ function initHeaderAutoHide() {
             header.classList.remove("header-hidden");
         }
 
-        lastScrollY = currentY;
+        lastDirectionY = currentY;
         ticking = false;
     }
 
@@ -622,12 +640,20 @@ function initAccessibilityToolbarAutoHide() {
     if (!toolbar) return;
 
     const HIDE_THRESHOLD = 80;
-    let lastScrollY = window.scrollY || 0;
+    const MIN_DELTA = 10; // see the matching note in initHeaderAutoHide
+    let lastDirectionY = window.scrollY || 0;
     let ticking = false;
 
     function handleScroll() {
         const currentY = window.scrollY || 0;
-        const scrollingDown = currentY > lastScrollY;
+        const delta = currentY - lastDirectionY;
+
+        if (Math.abs(delta) < MIN_DELTA) {
+            ticking = false;
+            return;
+        }
+
+        const scrollingDown = delta > 0;
 
         if (scrollingDown && currentY > HIDE_THRESHOLD) {
             toolbar.classList.add("toolbar-hidden");
@@ -635,7 +661,7 @@ function initAccessibilityToolbarAutoHide() {
             toolbar.classList.remove("toolbar-hidden");
         }
 
-        lastScrollY = currentY;
+        lastDirectionY = currentY;
         ticking = false;
     }
 
