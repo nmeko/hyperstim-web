@@ -481,8 +481,12 @@ function initAccessibilityBar() {
         localStorage.setItem(FONT_SIZE_KEY, String(currentFontSize));
         // Font-size changes the sticky header's actual rendered height
         // (toolbar buttons and nav text both scale) — remeasure so
-        // anything offset below it (like a sticky panel) stays correct.
+        // anything offset below it (like a sticky panel) stays correct,
+        // AND remeasure the toolbar's own natural height specifically,
+        // since its collapse/expand animation target was previously a
+        // fixed guess that didn't know about this at all.
         requestAnimationFrame(updateStickyHeaderOffset);
+        requestAnimationFrame(updateToolbarNaturalHeight);
     }
 
     // Apply the saved font size immediately on this page too, so a
@@ -579,11 +583,20 @@ function initHeaderAutoHide() {
 
     const MOBILE_QUERY = "(max-width: 600px)";
     const HIDE_THRESHOLD = 80; // don't hide on tiny, incidental scrolls
-    const MIN_DELTA = 10; // ignore scroll jitter smaller than this -- see
-                           // note below on why this exists.
-    let lastDirectionY = window.scrollY || 0; // position at the last real
-                                                // direction change, not the
-                                                // last raw scroll event
+    const MIN_DELTA = 10; // ignore scroll jitter smaller than this
+    const MIN_TOGGLE_INTERVAL_MS = 400; // even a real, non-jittery direction
+                                          // change can happen again within a
+                                          // few hundred ms during normal
+                                          // scrolling (e.g. someone reading,
+                                          // pausing, nudging back up slightly).
+                                          // Without a cooldown, each of those
+                                          // re-triggers the show/hide
+                                          // animation, which reads as
+                                          // "glitchy" even though every
+                                          // individual toggle was technically
+                                          // a correct direction detection.
+    let lastDirectionY = window.scrollY || 0;
+    let lastToggleTime = 0;
     let ticking = false;
 
     function handleScroll() {
@@ -597,24 +610,28 @@ function initHeaderAutoHide() {
         const currentY = window.scrollY || 0;
         const delta = currentY - lastDirectionY;
 
-        // Comparing every raw scroll event to the immediately previous one
-        // (no minimum movement required) made the header flicker rapidly
-        // once a person stopped scrolling: momentum/rubber-band scrolling
-        // keeps firing tiny back-and-forth scroll events even while
-        // "stopped", and each one flipped the direction and re-toggled the
-        // class. Requiring a real MIN_DELTA of net movement before acting
-        // filters that jitter out while staying responsive to real scrolls.
         if (Math.abs(delta) < MIN_DELTA) {
             ticking = false;
             return;
         }
 
-        const scrollingDown = delta > 0;
+        const now = performance.now();
+        if (now - lastToggleTime < MIN_TOGGLE_INTERVAL_MS) {
+            // Direction genuinely changed, but too soon after the last
+            // toggle -- still update lastDirectionY so we're comparing
+            // against a current position next time, just don't act yet.
+            lastDirectionY = currentY;
+            ticking = false;
+            return;
+        }
 
-        if (scrollingDown && currentY > HIDE_THRESHOLD) {
-            header.classList.add("header-hidden");
-        } else if (!scrollingDown) {
-            header.classList.remove("header-hidden");
+        const scrollingDown = delta > 0;
+        const wasHidden = header.classList.contains("header-hidden");
+        const shouldHide = scrollingDown && currentY > HIDE_THRESHOLD;
+
+        if (shouldHide !== wasHidden) {
+            header.classList.toggle("header-hidden", shouldHide);
+            lastToggleTime = now;
         }
 
         lastDirectionY = currentY;
@@ -635,13 +652,34 @@ function initHeaderAutoHide() {
 // including the nav/logo. The toolbar is a secondary control panel;
 // reclaiming its space while scrolling is worth doing everywhere, not
 // just on small screens, while primary navigation stays put.
+// Measures the toolbar's actual, natural content height and exposes it as
+// a CSS variable, so the collapse/expand animation always has the right
+// target height -- rather than a fixed guess that clips real content
+// whenever it's taller than assumed (most notably: the font-size control
+// living inside this same toolbar makes its own content grow, which a
+// hardcoded max-height doesn't know about).
+function updateToolbarNaturalHeight() {
+    const toolbar = document.getElementById("accessibility-toolbar");
+    if (!toolbar) return;
+    const wasHidden = toolbar.classList.contains("toolbar-hidden");
+    if (wasHidden) toolbar.classList.remove("toolbar-hidden");
+    const naturalHeight = toolbar.scrollHeight;
+    if (wasHidden) toolbar.classList.add("toolbar-hidden");
+    document.documentElement.style.setProperty("--toolbar-natural-height", `${naturalHeight}px`);
+}
+
 function initAccessibilityToolbarAutoHide() {
     const toolbar = document.getElementById("accessibility-toolbar");
     if (!toolbar) return;
 
+    updateToolbarNaturalHeight();
+    window.addEventListener("resize", () => requestAnimationFrame(updateToolbarNaturalHeight));
+
     const HIDE_THRESHOLD = 80;
-    const MIN_DELTA = 10; // see the matching note in initHeaderAutoHide
+    const MIN_DELTA = 10;
+    const MIN_TOGGLE_INTERVAL_MS = 400; // see the matching note in initHeaderAutoHide
     let lastDirectionY = window.scrollY || 0;
+    let lastToggleTime = 0;
     let ticking = false;
 
     function handleScroll() {
@@ -653,12 +691,20 @@ function initAccessibilityToolbarAutoHide() {
             return;
         }
 
-        const scrollingDown = delta > 0;
+        const now = performance.now();
+        if (now - lastToggleTime < MIN_TOGGLE_INTERVAL_MS) {
+            lastDirectionY = currentY;
+            ticking = false;
+            return;
+        }
 
-        if (scrollingDown && currentY > HIDE_THRESHOLD) {
-            toolbar.classList.add("toolbar-hidden");
-        } else if (!scrollingDown) {
-            toolbar.classList.remove("toolbar-hidden");
+        const scrollingDown = delta > 0;
+        const wasHidden = toolbar.classList.contains("toolbar-hidden");
+        const shouldHide = scrollingDown && currentY > HIDE_THRESHOLD;
+
+        if (shouldHide !== wasHidden) {
+            toolbar.classList.toggle("toolbar-hidden", shouldHide);
+            lastToggleTime = now;
         }
 
         lastDirectionY = currentY;

@@ -16,7 +16,7 @@
 }
 
 #accessibility-toolbar {
-    max-height: 60px;
+    max-height: var(--toolbar-natural-height, 60px);
     overflow: hidden;
     transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s ease;
 }
