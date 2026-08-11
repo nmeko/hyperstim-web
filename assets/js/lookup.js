@@ -311,8 +311,21 @@ function applyFiltersAndSort() {
 
     videos = videos.slice().sort((a, b) => {
         if (sortMode === "alphabetical") return a.title.localeCompare(b.title);
-        const pa = a.composite_percentile ?? 0;
-        const pb = b.composite_percentile ?? 0;
+
+        const pa = a.composite_percentile;
+        const pb = b.composite_percentile;
+        const aUnscored = pa === null || pa === undefined;
+        const bUnscored = pb === null || pb === undefined;
+
+        // Unscored videos have no real position in either ranking --
+        // treating a missing score as 0 (the old behavior) silently made
+        // every unrated video look like "the calmest," which is actively
+        // misleading, not just a missing-data quirk. Always push them to
+        // the bottom, regardless of which sort direction is active.
+        if (aUnscored && bUnscored) return 0;
+        if (aUnscored) return 1;
+        if (bUnscored) return -1;
+
         return sortMode === "calm-first" ? pa - pb : pb - pa;
     });
 
