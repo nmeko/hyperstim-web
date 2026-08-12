@@ -991,7 +991,15 @@ function initCopyLinkButtons() {
         const button = e.target.closest ? e.target.closest(".copy-link-button") : null;
         if (!button) return;
 
-        const url = location.href;
+        // Prefer an explicit video ID tagged on the button itself over
+        // location.href -- this is what actually fixes links copying
+        // without a video reference. Falls back to location.href for any
+        // other page/context where a copy-link-button might exist without
+        // this attribute.
+        const taggedId = button.dataset.videoId;
+        const url = taggedId
+            ? `${location.origin}${location.pathname}#v=${taggedId}`
+            : location.href;
         const originalText = button.textContent;
 
         function showCopiedFeedback() {

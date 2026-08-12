@@ -372,17 +372,26 @@ function renderVideoPanel(video, notFoundQuery, query) {
                 <div class="not-found">
                     <h3>This video hasn't been measured by this dataset yet</h3>
                     <p>Only videos the research pipeline has already processed have a permanent
-                    dataset score. A live, one-time analysis is available above for videos that
-                    aren't in the dataset yet.</p>
+                    dataset score. A live, one-time analysis has started automatically above,
+                    using the same measurement pipeline as the research dataset.</p>
                 </div>
               `
             : "";
         return;
     }
 
+    renderFoundVideoDisplay(video);
+}
+
+// Populates the video embed and the 3-category rating summary beneath
+// it -- shared by normal dataset videos AND completed live-analysis
+// results, so both render identically rather than live analysis having
+// its own separate, different-looking layout.
+function renderFoundVideoDisplay(video) {
     videoContainer.innerHTML = videoEmbedHTML(video);
 
     ratingContainer.innerHTML = `
+        ${video.live_analysis ? `<div class="live-analysis-badge">Live Analysis — not part of the permanent dataset</div>` : ""}
         <div class="type-breakdown">
             ${["pacing_intensification", "recovery_denial", "reward_patterning"].map(catKey => {
                 const catBand = bandFor(categoryPercentile(video, catKey));
@@ -439,8 +448,7 @@ function renderDetailsPanel(video) {
         <h3>${video.title}</h3>
         <p class="video-channel">${video.channel} &middot; ${video.era || ""}</p>
         ${scoreMeterHTML(video)}
-        ${distributionMarkerHTML(video.composite_percentile)}
-        <button type="button" class="secondary copy-link-button">Copy Link to This Result</button>
+        <button type="button" class="secondary copy-link-button" data-video-id="${video.video_id}">Copy Link to This Result</button>
         <div class="category-matrix">
             ${categoryMatrixHTML(video)}
         </div>

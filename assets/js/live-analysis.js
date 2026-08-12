@@ -4,26 +4,26 @@
  * that isn't in the dataset yet.
  *
  * Hooks into the existing "not found" search flow: when a
- * pasted URL doesn't match anything in SITE_DATA, this offers
- * a live-analysis option instead of a dead end.
+ * pasted URL doesn't match anything in SITE_DATA, this
+ * automatically starts a live analysis rather than requiring
+ * a second, separate click -- the search itself was already
+ * an explicit action, so no further confirmation is needed
+ * for a valid YouTube URL specifically (plain text searches
+ * that don't parse as a URL never reach this at all).
  *
- * Reuses the site's existing shared rendering functions
- * (compositeBadgeHTML, categoryScoreLineHTML) since the API's
- * result shape is deliberately identical to a normal dataset
- * video's { composite_percentile, taxonomy } shape. Results
- * are always shown in a clearly separate, labeled panel --
- * this is intentional: a live result is NOT part of the
- * permanent dataset (see the ephemeral-by-design note in
- * live_analysis_api.py), and the UI should never blur that
- * line for the person looking at it.
+ * Completed results render through the exact same functions
+ * a normal dataset video uses (renderFoundVideoDisplay,
+ * renderDetailsPanel in lookup.js) rather than a separate,
+ * differently-shaped card -- the API's result shape is
+ * deliberately identical to a dataset video's
+ * { composite_percentile, taxonomy } shape specifically so
+ * this reuse works cleanly. A "Live Analysis" badge is still
+ * inserted so it's never confused for a permanent dataset
+ * entry -- see the ephemeral-by-design note in
+ * live_analysis_api.py.
  * ---------------------------------------------------------
  */
 
-// CONFIGURE THIS: the public URL where live_analysis_api.py is
-// actually running on your VM. Using a placeholder here on purpose --
-// this must be filled in with your real address before this does
-// anything, and works safely as a no-op (button never appears) if left
-// unconfigured on a fresh checkout.
 const LIVE_ANALYSIS_API_BASE = "https://hyperstimulation.cis240515.projects.jetstream-cloud.org";
 
 const POLL_INTERVAL_MS = 2500;
@@ -31,21 +31,6 @@ const MAX_POLL_ATTEMPTS = 40; // ~100s ceiling before giving up client-side
 
 function looksLikeUnconfigured() {
     return LIVE_ANALYSIS_API_BASE.includes("YOUR-VM-ADDRESS-HERE");
-}
-
-function liveAnalysisPromptHTML(query) {
-    return `
-        <div class="live-analysis-prompt">
-            <p>This video isn't in the dataset yet.</p>
-            <button type="button" id="live-analysis-start" class="secondary">
-                Analyze it live
-            </button>
-            <p class="disclaimer">
-                Live analysis compares this video against the existing dataset,
-                but is not added to it. Processing usually takes 15-60 seconds.
-            </p>
-        </div>
-    `;
 }
 
 function liveAnalysisProgressHTML(statusLabel) {
@@ -67,32 +52,24 @@ function liveAnalysisErrorHTML(message) {
 }
 
 const STATUS_LABELS = {
-    queued: "Queued...",
+    queued: "This video isn't in the dataset yet. Starting a live analysis...",
     downloading: "Downloading a clip of the video...",
     analyzing: "Measuring pacing, audio intensity, and reward patterning...",
 };
 
-function liveAnalysisResultHTML(result) {
-    const categoryLines = Object.keys(TAXONOMY_SCHEMA)
-        .map(key => categoryScoreLineHTML(result, key))
-        .join("");
-
-    return `
-        <div class="live-analysis-result">
-            <div class="live-analysis-badge">Live Analysis — not part of the permanent dataset</div>
-            <h3>${result.title || result.video_id}</h3>
-            ${result.channel ? `<p class="video-channel">${result.channel}</p>` : ""}
-            ${compositeBadgeHTML(result)}
-            <ul class="score-list">${categoryLines}</ul>
-            <p class="disclaimer">
-                Compared against the current dataset. Scores may shift as the
-                dataset grows.
-            </p>
-        </div>
-    `;
+// Renders a completed live-analysis result using the exact same layout
+// dataset videos use: video embed + 3-category summary on the left
+// (renderFoundVideoDisplay, from lookup.js), full score meter and
+// category matrix on the right (renderDetailsPanel, from lookup.js).
+// Both functions read video.live_analysis themselves to show the
+// "not part of the permanent dataset" badge, so nothing extra is
+// needed here beyond calling them.
+function renderLiveAnalysisResult(result) {
+    renderFoundVideoDisplay(result);
+    renderDetailsPanel(result);
 }
 
-async function pollJob(jobId, container) {
+async function pollJob(jobId, progressContainer) {
     for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
         await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
 
@@ -100,14 +77,14 @@ async function pollJob(jobId, container) {
         try {
             response = await fetch(`${LIVE_ANALYSIS_API_BASE}/api/analyze/${jobId}`);
         } catch (networkErr) {
-            container.innerHTML = liveAnalysisErrorHTML(
+            progressContainer.innerHTML = liveAnalysisErrorHTML(
                 "Lost connection to the analysis server. Please try again."
             );
             return;
         }
 
         if (!response.ok) {
-            container.innerHTML = liveAnalysisErrorHTML(
+            progressContainer.innerHTML = liveAnalysisErrorHTML(
                 "The analysis server returned an unexpected error."
             );
             return;
@@ -116,27 +93,27 @@ async function pollJob(jobId, container) {
         const data = await response.json();
 
         if (data.status === "done") {
-            container.innerHTML = liveAnalysisResultHTML(data.result);
+            renderLiveAnalysisResult(data.result);
             return;
         }
         if (data.status === "error") {
-            container.innerHTML = liveAnalysisErrorHTML(data.error || "Analysis failed.");
+            progressContainer.innerHTML = liveAnalysisErrorHTML(data.error || "Analysis failed.");
             return;
         }
 
-        container.innerHTML = liveAnalysisProgressHTML(
+        progressContainer.innerHTML = liveAnalysisProgressHTML(
             STATUS_LABELS[data.status] || "Working..."
         );
     }
 
-    container.innerHTML = liveAnalysisErrorHTML(
+    progressContainer.innerHTML = liveAnalysisErrorHTML(
         "This is taking longer than expected. The video may be unusually long, " +
         "or the analysis server may be busy. Please try again in a moment."
     );
 }
 
-async function startLiveAnalysis(url, container) {
-    container.innerHTML = liveAnalysisProgressHTML("Starting...");
+async function startLiveAnalysis(url, progressContainer) {
+    progressContainer.innerHTML = liveAnalysisProgressHTML(STATUS_LABELS.queued);
 
     let response;
     try {
@@ -146,7 +123,7 @@ async function startLiveAnalysis(url, container) {
             body: JSON.stringify({ url }),
         });
     } catch (networkErr) {
-        container.innerHTML = liveAnalysisErrorHTML(
+        progressContainer.innerHTML = liveAnalysisErrorHTML(
             "Couldn't reach the analysis server. It may be offline."
         );
         return;
@@ -158,26 +135,25 @@ async function startLiveAnalysis(url, container) {
             const errBody = await response.json();
             if (errBody.detail) detail = errBody.detail;
         } catch (parseErr) { /* use default message */ }
-        container.innerHTML = liveAnalysisErrorHTML(detail);
+        progressContainer.innerHTML = liveAnalysisErrorHTML(detail);
         return;
     }
 
     const { job_id } = await response.json();
-    pollJob(job_id, container);
+    pollJob(job_id, progressContainer);
 }
 
-// Hook: called from runLookup() when findVideo() finds nothing AND the
-// query looks like a real YouTube URL/ID. Safe no-op if the API base
-// is still the placeholder (nothing configured yet on a fresh checkout).
+// Hook: called from renderVideoPanel() in lookup.js when findVideo()
+// finds nothing AND the query looks like a real YouTube URL/ID.
+// Automatically starts analysis -- no separate button/click required,
+// since reaching this point already required an explicit search
+// action. Safe no-op if the API base is still the placeholder
+// (nothing configured yet on a fresh checkout).
 function offerLiveAnalysis(query, container) {
     if (looksLikeUnconfigured()) return false;
     const videoId = youtubeId(query);
     if (!videoId) return false;
 
-    container.innerHTML = liveAnalysisPromptHTML(query);
-    const startButton = document.getElementById("live-analysis-start");
-    if (startButton) {
-        startButton.addEventListener("click", () => startLiveAnalysis(query, container));
-    }
+    startLiveAnalysis(query, container);
     return true;
 }
