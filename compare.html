@@ -45,7 +45,10 @@
 <body>
 
 <div id="site-header">
-<div id="accessibility-toolbar">
+<button id="accessibility-tab" aria-label="Open accessibility settings" aria-expanded="false" aria-controls="accessibility-toolbar">
+    <span class="accessibility-tab-icon" aria-hidden="true">Aa</span>
+</button>
+<div id="accessibility-toolbar" aria-hidden="true">
     <button id="text-smaller" aria-label="Decrease text size">A-</button>
     <button id="text-reset" aria-label="Reset text size">A</button>
     <button id="text-larger" aria-label="Increase text size">A+</button>

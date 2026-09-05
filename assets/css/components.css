@@ -13,6 +13,18 @@
     animation: badge-reveal 0.35s ease-out;
 }
 
+.rating-badge-small {
+    padding: 0.15rem 0.55rem;
+    font-size: 0.75rem;
+}
+
+.video-quick-label {
+    margin: 0.15rem 0 0.4rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 600;
+}
+
 @keyframes badge-reveal {
     from { opacity: 0; transform: scale(0.85); }
     to   { opacity: 1; transform: scale(1); }
@@ -462,11 +474,24 @@ iframe {
     display: flex;
     flex-direction: column;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
 }
 
 .video-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* The explicit button and "Compare This" link inside the card are
+   still separately clickable (the button is now redundant with the
+   whole card, but stays as a clear, explicit affordance; the compare
+   link intentionally does something different from a plain card
+   click, so it needs to visually read as its own control). */
+.video-card .card-actions button,
+.video-card .card-actions a {
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
 }
 
 .video-thumb {
@@ -947,6 +972,13 @@ html[data-contrast="high"] .matrix-cell.diff-highlight {
     color: var(--muted);
 }
 
+.score-meter-summary {
+    font-size: 1rem;
+    color: var(--text);
+    margin: 0 0 0.75rem;
+    line-height: 1.4;
+}
+
 .score-meter-track {
     position: relative;
     height: 16px;
@@ -988,6 +1020,14 @@ html[data-theme="dark"] .score-meter-marker {
    Category matrix (details panel) — groups all 10 pattern
    types under their 3 parent categories at a glance
 ========================================================= */
+
+.sensory-details-heading {
+    margin: 1.5rem 0 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 1.15rem;
+    color: var(--text);
+}
 
 .category-matrix {
     display: grid;
@@ -1044,10 +1084,33 @@ html[data-theme="dark"] .score-meter-marker {
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.6rem 1rem;
+    padding: 0.6rem 1rem 0.3rem;
     flex-wrap: wrap;
     cursor: pointer;
     list-style-position: outside;
+}
+
+.matrix-type-bar-track {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--surface-alt);
+    margin: 0 1rem 0.6rem;
+    overflow: hidden;
+}
+
+.matrix-type-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.rating-fill-good { background: var(--good); }
+.rating-fill-moderate { background: var(--moderate); }
+.rating-fill-extreme { background: var(--extreme); }
+
+.matrix-category-bar-track {
+    height: 10px;
+    margin: 0 1rem 0.85rem;
 }
 
 .matrix-type-row summary::-webkit-details-marker {

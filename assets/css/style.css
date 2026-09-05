@@ -554,6 +554,35 @@ button.secondary:hover {
     font-size: 0.85rem;
 }
 
+/* The moment two videos are queued, this is the one thing the person
+   actually wants to do next -- it should be unmistakable, not styled
+   the same muted way as "Clear" right next to it. */
+.compare-tray-action {
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+    padding: 0.6rem 1.1rem;
+    border-radius: var(--radius);
+    text-decoration: none;
+    white-space: nowrap;
+    animation: compare-ready-pulse 1.2s ease 2;
+}
+
+.compare-tray-action:hover {
+    background: var(--primary-hover);
+}
+
+@keyframes compare-ready-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .compare-tray-action {
+        animation: none;
+    }
+}
+
 body:has(#compare-tray) {
     padding-bottom: 4.5rem;
 }

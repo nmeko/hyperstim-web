@@ -45,7 +45,10 @@
 <body>
 
 <div id="site-header">
-<div id="accessibility-toolbar">
+<button id="accessibility-tab" aria-label="Open accessibility settings" aria-expanded="false" aria-controls="accessibility-toolbar">
+    <span class="accessibility-tab-icon" aria-hidden="true">Aa</span>
+</button>
+<div id="accessibility-toolbar" aria-hidden="true">
     <button id="text-smaller" aria-label="Decrease text size">A-</button>
     <button id="text-reset" aria-label="Reset text size">A</button>
     <button id="text-larger" aria-label="Increase text size">A+</button>
@@ -97,20 +100,14 @@
 
     <details class="explainer">
         <summary>How to read these scores</summary>
-        <p>
-            Every video gets an overall score and a breakdown across three categories:
-            <strong>Pacing Intensification</strong> (how fast the video moves visually),
-            <strong>Recovery Denial</strong> (how rarely it lets a viewer calm back down),
-            and <strong>Reward Patterning</strong> (how often it sets up a small payoff).
-        </p>
         <ul class="band-key">
             <li><span class="rating-badge rating-good">Good</span> calmer than most of the dataset</li>
             <li><span class="rating-badge rating-moderate">Moderate</span> typical for this dataset</li>
             <li><span class="rating-badge rating-extreme">Extremely High</span> substantially more intense than most</li>
         </ul>
         <p class="disclaimer">
-            Scores are <strong>relative to this dataset sample</strong>, not an absolute or medical scale.
-            This tool measures production style only. It makes no claim about developmental harm.
+            Scores are relative to this dataset, not an absolute or medical scale.
+            <a href="resources.html">See the full taxonomy and methodology &rarr;</a>
         </p>
     </details>
 </section>

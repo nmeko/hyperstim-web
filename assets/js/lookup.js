@@ -91,6 +91,18 @@ function cardHTML(video) {
         ? `<div class="reference-badge">Reference Point: closest to the dataset average</div>`
         : "";
 
+    const band = bandFor(video.composite_percentile);
+    const ageLabel = video.target_age_group === "0-5" ? "Ages 0-5"
+        : video.target_age_group === "6-12" ? "Ages 6-12"
+        : null;
+    const quickLabelHTML = band.class !== "unknown"
+        ? `
+            <p class="video-quick-label">
+                ${ageLabel ? `${ageLabel} &middot; ` : ""}<span class="rating-badge rating-${band.class} rating-badge-small">${band.label}</span>
+            </p>
+          `
+        : "";
+
     return `
         ${referenceBadge}
         <div class="video-thumb">
@@ -98,6 +110,7 @@ function cardHTML(video) {
         </div>
         <h3>${video.title}</h3>
         <p class="video-channel">${video.channel}</p>
+        ${quickLabelHTML}
         <p class="video-category">${topic} &middot; ${video.era || ""}</p>
         ${compositeBadgeHTML(video)}
         <ul class="score-list">
@@ -170,6 +183,7 @@ function renderCards(videos) {
         visibleVideos.forEach(video => {
             const card = document.createElement("article");
             card.className = "video-card";
+            card.dataset.video = video.video_id;
             card.innerHTML = cardHTML(video);
             grid.appendChild(card);
             attachHoverPreview(card, video);
@@ -449,6 +463,7 @@ function renderDetailsPanel(video) {
         <p class="video-channel">${video.channel} &middot; ${video.era || ""}</p>
         ${scoreMeterHTML(video)}
         <button type="button" class="secondary copy-link-button" data-video-id="${video.video_id}">Copy Link to This Result</button>
+        <h4 id="sensory-details" class="sensory-details-heading">Sensory Details</h4>
         <div class="category-matrix">
             ${categoryMatrixHTML(video)}
         </div>
@@ -467,8 +482,16 @@ function showDetails(video, notFoundQuery, query) {
     if (video) {
         location.hash = `v=${video.video_id}`;
         scrollResultsIntoView();
-    } else if (history.replaceState) {
-        history.replaceState(null, "", location.pathname + location.search);
+    } else {
+        if (history.replaceState) {
+            history.replaceState(null, "", location.pathname + location.search);
+        }
+        // Not found (including the live-analysis case) still needs the
+        // same auto-scroll: without it, someone searching a video that
+        // isn't in the dataset has no reason to notice that a "starting
+        // live analysis..." message appeared below the fold, and might
+        // assume their search just didn't do anything.
+        if (notFoundQuery) scrollResultsIntoView();
     }
 }
 
@@ -487,6 +510,20 @@ function runLookup() {
     const query = input.value;
     const video = findVideo(query);
     showDetails(video, !video && query.trim().length > 0, query);
+
+    // The search box doubles as a live filter for the card grid below
+    // (see the "input" listener near the bottom of this file). Left
+    // as-is after a successful lookup, a pasted URL or raw video ID
+    // would keep filtering that grid too -- and since no title or
+    // channel literally contains a URL/ID string, the grid would be
+    // stuck showing zero results with no obvious reason why. Clearing
+    // the box once the lookup succeeds lets the grid revert to
+    // showing everything, matching what the person actually did (find
+    // one specific video), not what the leftover text looks like.
+    if (video) {
+        input.value = "";
+        applyFiltersAndSort();
+    }
 }
 
 /* =========================================================
@@ -564,6 +601,10 @@ if (dropZone) {
 ========================================================= */
 
 document.addEventListener("click", e => {
+    // The "Compare This" link should navigate normally, not also
+    // trigger showDetails() on the current page it's about to leave.
+    if (e.target.closest(".compare-link")) return;
+
     const trigger = e.target.closest("[data-video]");
     if (!trigger) return;
     const video = SITE_DATA.videos.find(v => v.video_id === trigger.dataset.video);

@@ -223,6 +223,7 @@ function scoreMeterHTML(video) {
                     ${infoIconHTML(COMPOSITE_SCORE_EXPLANATION, "What does the overall score mean?")}
                 </span>
             </div>
+            <p class="score-meter-summary">${plainLanguageSummary(band)}</p>
             <div class="score-meter-track" role="img" aria-label="${clamped} percent, ${band.label}">
                 <div class="score-meter-marker" style="left: ${clamped}%;"></div>
             </div>
@@ -233,6 +234,24 @@ function scoreMeterHTML(video) {
             </div>
         </div>
     `;
+}
+
+// A plain-English sentence to sit alongside the percentile and badge,
+// not replace them -- same three bands, same terminology used
+// everywhere else on the site (Good/Moderate/Extremely High), just
+// spelled out as a sentence a parent can read at a glance rather than
+// interpreting a percentage or a colored bar first.
+function plainLanguageSummary(band) {
+    switch (band.class) {
+        case "good":
+            return "This video is calmer than most videos in this dataset.";
+        case "moderate":
+            return "This video has typical production intensity for this dataset.";
+        case "extreme":
+            return "This video is substantially more intense than most videos in this dataset.";
+        default:
+            return "";
+    }
 }
 
 // A grouped matrix showing all 3 categories and their subcategories at
@@ -283,6 +302,14 @@ function categoryMatrixHTML(video) {
             const entry = video.taxonomy?.[catKey]?.types?.[typeKey];
             const pct = entry ? entry.percentile : null;
             const band = bandFor(pct);
+            const clamped = (pct === null || pct === undefined || Number.isNaN(pct)) ? null : Math.max(0, Math.min(100, Math.round(pct)));
+            const barHTML = clamped === null
+                ? ""
+                : `
+                    <div class="matrix-type-bar-track" role="img" aria-label="${clamped} percent, ${band.label}">
+                        <div class="matrix-type-bar-fill rating-fill-${band.class}" style="width: ${clamped}%;"></div>
+                    </div>
+                  `;
             return `
                 <details class="matrix-type-row">
                     <summary>
@@ -292,12 +319,22 @@ function categoryMatrixHTML(video) {
                         </span>
                         <span class="rating-badge rating-${band.class}">${formatBand(band, pct)}</span>
                     </summary>
+                    ${barHTML}
                     <div class="matrix-feature-detail">
                         ${featureDetailRowsHTML(entry)}
                     </div>
                 </details>
             `;
         }).join("");
+
+        const catClamped = (catPct === null || catPct === undefined || Number.isNaN(catPct)) ? null : Math.max(0, Math.min(100, Math.round(catPct)));
+        const catBarHTML = catClamped === null
+            ? ""
+            : `
+                <div class="matrix-type-bar-track matrix-category-bar-track" role="img" aria-label="${catClamped} percent, ${catBand.label}">
+                    <div class="matrix-type-bar-fill rating-fill-${catBand.class}" style="width: ${catClamped}%;"></div>
+                </div>
+              `;
 
         return `
             <div class="matrix-category-group">
@@ -308,6 +345,7 @@ function categoryMatrixHTML(video) {
                     </span>
                     <span class="rating-badge rating-${catBand.class}">${formatBand(catBand, catPct)}</span>
                 </div>
+                ${catBarHTML}
                 <div class="matrix-type-rows">
                     ${rows}
                 </div>
@@ -481,12 +519,11 @@ function initAccessibilityBar() {
         localStorage.setItem(FONT_SIZE_KEY, String(currentFontSize));
         // Font-size changes the sticky header's actual rendered height
         // (toolbar buttons and nav text both scale) — remeasure so
-        // anything offset below it (like a sticky panel) stays correct,
-        // AND remeasure the toolbar's own natural height specifically,
-        // since its collapse/expand animation target was previously a
-        // fixed guess that didn't know about this at all.
+        // anything offset below it (like a sticky panel) stays correct.
+        // No longer remeasuring toolbar height here: the accessibility
+        // panel now slides in via transform, not a height animation, so
+        // its own size doesn't need tracking the way it used to.
         requestAnimationFrame(updateStickyHeaderOffset);
-        requestAnimationFrame(updateToolbarNaturalHeight);
     }
 
     // Apply the saved font size immediately on this page too, so a
@@ -652,69 +689,43 @@ function initHeaderAutoHide() {
 // including the nav/logo. The toolbar is a secondary control panel;
 // reclaiming its space while scrolling is worth doing everywhere, not
 // just on small screens, while primary navigation stays put.
-// Measures the toolbar's actual, natural content height and exposes it as
-// a CSS variable, so the collapse/expand animation always has the right
-// target height -- rather than a fixed guess that clips real content
-// whenever it's taller than assumed (most notably: the font-size control
-// living inside this same toolbar makes its own content grow, which a
-// hardcoded max-height doesn't know about).
-function updateToolbarNaturalHeight() {
+// The accessibility panel now lives off-screen by default and only
+// slides into view when the person explicitly opens it via the tab --
+// no more scroll-based show/hide logic to get right, since a panel
+// that only appears on request never needs to react to scrolling at
+// all. Closed by default on every page load; this is a utility panel
+// most visitors won't touch, so a closed default keeps it out of the
+// way rather than assuming anyone wants it open.
+function initAccessibilityToolbarToggle() {
+    const tab = document.getElementById("accessibility-tab");
     const toolbar = document.getElementById("accessibility-toolbar");
-    if (!toolbar) return;
-    const wasHidden = toolbar.classList.contains("toolbar-hidden");
-    if (wasHidden) toolbar.classList.remove("toolbar-hidden");
-    const naturalHeight = toolbar.scrollHeight;
-    if (wasHidden) toolbar.classList.add("toolbar-hidden");
-    document.documentElement.style.setProperty("--toolbar-natural-height", `${naturalHeight}px`);
-}
+    if (!tab || !toolbar) return;
 
-function initAccessibilityToolbarAutoHide() {
-    const toolbar = document.getElementById("accessibility-toolbar");
-    if (!toolbar) return;
-
-    updateToolbarNaturalHeight();
-    window.addEventListener("resize", () => requestAnimationFrame(updateToolbarNaturalHeight));
-
-    const HIDE_THRESHOLD = 80;
-    const MIN_DELTA = 10;
-    const MIN_TOGGLE_INTERVAL_MS = 400; // see the matching note in initHeaderAutoHide
-    let lastDirectionY = window.scrollY || 0;
-    let lastToggleTime = 0;
-    let ticking = false;
-
-    function handleScroll() {
-        const currentY = window.scrollY || 0;
-        const delta = currentY - lastDirectionY;
-
-        if (Math.abs(delta) < MIN_DELTA) {
-            ticking = false;
-            return;
-        }
-
-        const now = performance.now();
-        if (now - lastToggleTime < MIN_TOGGLE_INTERVAL_MS) {
-            lastDirectionY = currentY;
-            ticking = false;
-            return;
-        }
-
-        const scrollingDown = delta > 0;
-        const wasHidden = toolbar.classList.contains("toolbar-hidden");
-        const shouldHide = scrollingDown && currentY > HIDE_THRESHOLD;
-
-        if (shouldHide !== wasHidden) {
-            toolbar.classList.toggle("toolbar-hidden", shouldHide);
-            lastToggleTime = now;
-        }
-
-        lastDirectionY = currentY;
-        ticking = false;
+    function setOpen(open) {
+        toolbar.classList.toggle("toolbar-open", open);
+        toolbar.setAttribute("aria-hidden", String(!open));
+        tab.setAttribute("aria-expanded", String(open));
     }
 
-    window.addEventListener("scroll", () => {
-        if (!ticking) {
-            requestAnimationFrame(handleScroll);
-            ticking = true;
+    tab.addEventListener("click", () => {
+        const isOpen = toolbar.classList.contains("toolbar-open");
+        setOpen(!isOpen);
+    });
+
+    // Close on outside click, so it doesn't stay parked open over page
+    // content after someone's done with it.
+    document.addEventListener("click", (e) => {
+        const isOpen = toolbar.classList.contains("toolbar-open");
+        if (!isOpen) return;
+        if (toolbar.contains(e.target) || tab.contains(e.target)) return;
+        setOpen(false);
+    });
+
+    // Close on Escape, standard behavior for any dismissible panel.
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && toolbar.classList.contains("toolbar-open")) {
+            setOpen(false);
+            tab.focus();
         }
     });
 }
@@ -946,7 +957,7 @@ function renderCompareTray() {
     }).join("");
 
     const actionHTML = queue.length === 2
-        ? `<a class="secondary" href="compare.html#a=${queue[0]}&b=${queue[1]}">Compare Now</a>`
+        ? `<a class="compare-tray-action" href="compare.html#a=${queue[0]}&b=${queue[1]}">Compare These Two &rarr;</a>`
         : `<span class="compare-tray-hint">Add one more video to compare</span>`;
 
     tray.innerHTML = `
@@ -1109,7 +1120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initScrollReveal();
     updateStickyHeaderOffset();
     initHeaderAutoHide();
-    initAccessibilityToolbarAutoHide();
+    initAccessibilityToolbarToggle();
     initBackToTop();
     initOnboarding();
     initVideoRetryHandlers();
