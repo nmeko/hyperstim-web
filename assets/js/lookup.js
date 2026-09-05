@@ -115,7 +115,7 @@ function cardHTML(video) {
         ${compositeBadgeHTML(video)}
         <ul class="score-list">
             ${categoryScoreLineHTML(video, "pacing_intensification")}
-            ${categoryScoreLineHTML(video, "recovery_denial")}
+            ${categoryScoreLineHTML(video, "sustained_sensory_intensity")}
             ${categoryScoreLineHTML(video, "reward_patterning")}
         </ul>
         <div class="card-actions">

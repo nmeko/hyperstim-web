@@ -99,7 +99,7 @@
         <summary>How to read these scores</summary>
         <p>
             Every video gets an overall score and a breakdown across three categories:
-            <strong>Pacing Intensification</strong>, <strong>Recovery Denial</strong>, and
+            <strong>Pacing Intensification</strong>, <strong>Sustained Sensory Intensity</strong>, and
             <strong>Reward Patterning</strong>. Each category is built from named,
             computationally-measured features, never a subjective judgment call.
         </p>
@@ -112,31 +112,33 @@
 </section>
 
 <section id="resources-list">
-    <h2>The Taxonomy: 3 Categories, 10 Pattern Types, 13 Features</h2>
+    <h2>The Taxonomy: 3 Categories, 12 Pattern Types, 12 Features</h2>
 
     <h3>Pacing Intensification</h3>
-    <p>How fast the video moves visually.</p>
+    <p>How fast the video moves.</p>
     <ul>
         <li><strong>Rapid Cutting:</strong> how often the shot changes.</li>
         <li><strong>Scene Discontinuity:</strong> how visually different one shot is from the next.</li>
-        <li><strong>Chromatic Instability:</strong> how much the color palette shifts frame to frame.</li>
-        <li><strong>Visual Intensity:</strong> overall color saturation and vividness.</li>
+        <li><strong>Palette Instability:</strong> how much the color palette shifts frame to frame.</li>
+        <li><strong>Luminance Flash:</strong> how often brightness jumps sharply between frames.</li>
         <li><strong>Continuous Visual Motion:</strong> how much of the video has visible motion, and how rarely it holds still.</li>
+        <li><strong>Loudness Jumps:</strong> how often volume jumps sharply.</li>
     </ul>
 
-    <h3>Recovery Denial</h3>
-    <p>How rarely the video lets a viewer's arousal come back down.</p>
+    <h3>Sustained Sensory Intensity</h3>
+    <p>How much the video holds sound and color at a high, unrelenting level.</p>
     <ul>
-        <li><strong>Sustained Audio Intensity:</strong> average loudness across the video.</li>
-        <li><strong>Loudness Oscillation:</strong> how often volume jumps sharply.</li>
-        <li><strong>Silence Elimination:</strong> what share of the video is near-total silence.</li>
+        <li><strong>Visual Intensity:</strong> overall color saturation and vividness.</li>
+        <li><strong>Visual Brightness:</strong> how bright the video is, on average.</li>
+        <li><strong>Audio Intensity:</strong> average loudness across the video.</li>
+        <li><strong>Silence Elimination:</strong> what share of the video sits at or above a typical loudness level.</li>
     </ul>
 
     <h3>Reward Patterning</h3>
     <p>How often the video sets up a small payoff.</p>
     <ul>
-        <li><strong>Musical Build-Resolve:</strong> how often music builds tension and releases it.</li>
-        <li><strong>Surprise Reveals:</strong> how often a cut lines up with a sudden sound burst.</li>
+        <li><strong>Audio Build-Resolve:</strong> how often the audio builds tension and releases it.</li>
+        <li><strong>Surprise Reveals:</strong> how often a cut lines up with a sudden jump in loudness.</li>
     </ul>
 
     <p class="disclaimer">
@@ -316,7 +318,7 @@
             const size = SITE_DATA.videos.length;
             let text = `Current dataset: ${size} videos.`;
             if (typeof meta.fully_scored_count === "number") {
-                text += ` ${meta.fully_scored_count} are fully scored across all 10 pattern types; ${meta.partially_scored_count} have partial coverage (some individual types show "Not enough data" rather than a score).`;
+                text += ` ${meta.fully_scored_count} are fully scored across all 12 pattern types; ${meta.partially_scored_count} have partial coverage (some individual types show "Not enough data" rather than a score).`;
             }
             if (meta.full_corpus_size) {
                 text += ` The pipeline's eventual target scope is ${meta.full_corpus_size} videos.`;

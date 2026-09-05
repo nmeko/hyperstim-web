@@ -18,55 +18,65 @@ const TAXONOMY_SCHEMA = {
     pacing_intensification: {
         label: "Pacing Intensification",
         short: "Pacing",
-        intro: "How fast the video moves visually: frequent cuts, shifting colors, and constant motion keep the visual system continually re-triggered.",
+        intro: "How fast the video moves: frequent cuts, shifting colors, brightness flashes, constant motion, and sharp volume jumps keep the senses continually re-triggered.",
         types: {
             rapid_cutting: {
                 label: "Rapid Cutting",
                 explanation: "How often the shot changes. Frequent cuts keep pulling attention back to a new image before a child has finished processing the last one.",
-                features: ["cuts_per_min", "mean_shot_dur_s"]
+                features: ["cuts_per_min"]
             },
             scene_discontinuity: {
                 label: "Scene Discontinuity",
                 explanation: "How visually different one shot is from the next at each cut. Big jumps make it harder for a young viewer to track what just happened.",
-                features: ["inter_cut_ssim_mean"]
+                features: ["inter_cut_dssim_mean"]
             },
-            chromatic_instability: {
-                label: "Chromatic Instability",
+            palette_instability: {
+                label: "Palette Instability",
                 explanation: "How much the color palette shifts from frame to frame. Constantly shifting colors keep the visual system in flux with no stable point to rest on.",
-                features: ["mean_hist_diff"]
+                features: ["palette_change_per_min"]
             },
-            visual_intensity: {
-                label: "Visual Intensity",
-                explanation: "Overall color saturation and vividness. Highly saturated, colorful footage is more visually arousing than muted footage.",
-                features: ["mean_saturation", "mean_colorfulness"]
+            luminance_flash: {
+                label: "Luminance Flash",
+                explanation: "How often brightness jumps sharply between frames. Sudden flashes trigger an involuntary attention response, similar to a startle reflex.",
+                features: ["lstar_flash_per_min"]
             },
             continuous_visual_motion: {
                 label: "Continuous Visual Motion",
                 explanation: "How much of the video has visible motion, and how rarely it holds still. Constant motion leaves little visual downtime.",
-                features: ["motion_mean", "motion_rest_frac"]
+                features: ["motion_frac"]
+            },
+            loudness_jumps: {
+                label: "Loudness Jumps",
+                explanation: "How often volume jumps sharply. Frequent, sharp jumps repeatedly re-trigger a startle-like attention response.",
+                features: ["loudness_jumps_per_min"]
             }
         }
     },
 
-    recovery_denial: {
-        label: "Recovery Denial",
-        short: "Recovery",
-        intro: "How often the video lets a viewer's arousal come back down, through quiet moments, steadier volume, and a break from constant intensity.",
+    sustained_sensory_intensity: {
+        label: "Sustained Sensory Intensity",
+        short: "Sensory Intensity",
+        intro: "How much the video holds sound and color at a high, unrelenting level, with few rest periods for a viewer's arousal to settle back down.",
         types: {
-            sustained_audio_intensity: {
-                label: "Sustained Audio Intensity",
-                explanation: "Average loudness across the whole video. Sustained loud audio keeps arousal elevated, with fewer quiet moments to reset.",
-                features: ["mean_rms_db"]
+            visual_intensity: {
+                label: "Visual Intensity",
+                explanation: "Overall color saturation and vividness. Highly saturated, colorful footage is more visually arousing than muted footage.",
+                features: ["mean_saturation"]
             },
-            loudness_oscillation: {
-                label: "Loudness Oscillation",
-                explanation: "How often volume jumps sharply. Frequent, sharp jumps repeatedly re-trigger a startle-like attention response.",
-                features: ["loudness_oscillation_score", "loudness_jumps_per_min"]
+            visual_brightness: {
+                label: "Visual Brightness",
+                explanation: "How bright the video is, on average. Sustained high brightness keeps the visual system at a heightened baseline.",
+                features: ["mean_lstar"]
+            },
+            audio_intensity: {
+                label: "Audio Intensity",
+                explanation: "Average loudness across the whole video. Sustained loud audio keeps arousal elevated, with fewer quiet moments to reset.",
+                features: ["lufs"]
             },
             silence_elimination: {
                 label: "Silence Elimination",
-                explanation: "What share of the video is near-total silence. Little or no silence removes the natural pauses a young viewer needs to disengage and reset.",
-                features: ["silence_frac"]
+                explanation: "What share of the video sits at or above a typical loudness level. Little or no quiet time removes the natural pauses a young viewer needs to disengage and reset.",
+                features: ["high_lufs_frac"]
             }
         }
     },
@@ -76,15 +86,15 @@ const TAXONOMY_SCHEMA = {
         short: "Reward",
         intro: "How often the video sets up a small payoff, a musical release or a surprise reveal, training an expectation of constant reward.",
         types: {
-            musical_build_resolve: {
-                label: "Musical Build-Resolve",
-                explanation: "How often music builds tension and then releases it. Frequent build-and-release cycles condition an expectation of constant payoff.",
+            audio_build_resolve: {
+                label: "Audio Build-Resolve",
+                explanation: "How often the audio builds tension and then releases it. Frequent build-and-release cycles condition an expectation of constant payoff.",
                 features: ["build_resolve_per_min"]
             },
             surprise_reveals: {
                 label: "Surprise Reveals",
-                explanation: "How often a cut lines up with a sudden sound burst. Frequent surprise pairings train a strong expectation of being startled or rewarded.",
-                features: ["reveal_coincidence_rate"]
+                explanation: "How often a cut lines up with a sudden jump in loudness within a fraction of a second. Frequent pairings train a strong expectation of being startled or rewarded right when the scene changes.",
+                features: ["loudness_jump_at_cut_per_min"]
             }
         }
     }
@@ -766,7 +776,7 @@ function initOnboarding() {
             <p>This site measures production-intensity patterns in children's videos across three categories:</p>
             <ul class="onboarding-categories">
                 <li><strong>Pacing Intensification:</strong> how fast the video moves visually.</li>
-                <li><strong>Recovery Denial:</strong> how rarely it lets a viewer calm back down.</li>
+                <li><strong>Sustained Sensory Intensity:</strong> how much it holds sound and color at a high, unrelenting level.</li>
                 <li><strong>Reward Patterning:</strong> how often it sets up a small payoff.</li>
             </ul>
             <p>Every score is a band, shown with both a color and a shape, so it still reads without color:</p>
