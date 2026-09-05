@@ -452,6 +452,7 @@ function renderDetailsPanel(video) {
 
     detailsPanel.innerHTML = `
         <h4 id="sensory-details" class="sensory-details-heading sensory-details-heading-first">Sensory Details</h4>
+        <p class="sensory-details-hint">Click any row below to see the exact measurement behind its score.</p>
         <div class="category-matrix">
             ${categoryMatrixHTML(video)}
         </div>

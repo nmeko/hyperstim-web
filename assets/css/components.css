@@ -1093,7 +1093,31 @@ html[data-theme="dark"] .score-meter-marker {
     padding: 0.6rem 1rem 0.3rem;
     flex-wrap: wrap;
     cursor: pointer;
-    list-style-position: outside;
+    list-style: none;
+}
+
+.matrix-type-row summary::-webkit-details-marker {
+    display: none;
+}
+
+.matrix-type-expand-icon {
+    display: inline-block;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--muted);
+    transition: transform 0.2s ease;
+    line-height: 1;
+}
+
+details.matrix-type-row[open] .matrix-type-expand-icon {
+    transform: rotate(90deg);
+}
+
+.sensory-details-hint {
+    margin: 0 0 1rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
 }
 
 .matrix-type-bar-track {
@@ -1122,10 +1146,6 @@ html[data-theme="dark"] .score-meter-marker {
 .matrix-feature-bar-track {
     height: 6px;
     margin: 0.2rem 1rem 0.5rem;
-}
-
-.matrix-type-row summary::-webkit-details-marker {
-    color: var(--muted);
 }
 
 .matrix-type-label {

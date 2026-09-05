@@ -323,6 +323,7 @@ function categoryMatrixHTML(video) {
                 <details class="matrix-type-row">
                     <summary>
                         <span class="matrix-type-label-group">
+                            <span class="matrix-type-expand-icon" aria-hidden="true">&rsaquo;</span>
                             <span class="matrix-type-label">${typeSchema.label}</span>
                             ${infoIconHTML(typeSchema.explanation, `Why does ${typeSchema.label} get this rating?`)}
                         </span>
