@@ -269,7 +269,7 @@ function plainLanguageSummary(band) {
 // category -- rather than a flat list where that grouping isn't visible.
 // Turns a raw snake_case feature key (e.g. "cuts_per_min") into a
 // readable label ("Cuts Per Min") without needing a separate lookup
-// table for all 13 features.
+// table for all 12 features.
 function readableFeatureName(key) {
     return key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -497,7 +497,7 @@ function allTypeEntries(video) {
     return entries;
 }
 
-// How many of the 10 pattern types have a real (non-null) percentile for
+// How many of the 12 pattern types have a real (non-null) percentile for
 // this video, out of 10. Used anywhere we want to prefer well-covered
 // videos over ones the pipeline hasn't fully processed yet — this number
 // rises on its own as coverage improves, so callers never need updating.

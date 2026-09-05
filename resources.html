@@ -334,7 +334,7 @@
                 "description": "Production-intensity measurements for children's videos across a taxonomy of pacing, audio intensity, and reward patterning.",
                 "url": "https://nmeko.github.io/hyperstim-web/resources.html",
                 "creator": { "@type": "Organization", "name": "HyperStim Research" },
-                "variableMeasured": ["cuts_per_min", "mean_rms_db", "silence_frac", "build_resolve_per_min"],
+                "variableMeasured": ["cuts_per_min", "lufs", "high_lufs_frac", "build_resolve_per_min"],
             };
             if (typeof meta.generated_at === "string") schema.dateModified = meta.generated_at;
             schema.size = `${size} videos`;

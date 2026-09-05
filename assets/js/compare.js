@@ -293,7 +293,7 @@ function renderTypeGrid(videoA, videoB) {
 
 /* =========================================================
    2b. Comparison bar chart — a compact, all-in-one-glance
-   summary of both videos across all 10 pattern types. Reuses
+   summary of both videos across all 12 pattern types. Reuses
    meterRow() (the same bar component already used per-row in
    the matrix above), so it's visually consistent and doesn't
    need a separate accessible-alternative table — the bars are
@@ -433,7 +433,7 @@ function pickRandomPreferCovered(videos) {
     // least one type scored" -- a video missing most of its scores
     // isn't a good example for a new user's first look at Compare,
     // especially paired against a fully-scored video on the other side.
-    const totalTypes = SITE_DATA.videos.length ? allTypeEntries(SITE_DATA.videos[0]).length : 10;
+    const totalTypes = SITE_DATA.videos.length ? allTypeEntries(SITE_DATA.videos[0]).length : 12;
     const fullyScored = videos.filter(v => typeCoverageCount(v) === totalTypes);
     if (fullyScored.length) return pickRandom(fullyScored);
 
@@ -445,7 +445,6 @@ function pickRandomPreferCovered(videos) {
 }
 
 function computePreset() {
-    // "Contemporary" is the fixed fallback era_for() assigns to any video
     // Historical vs. contemporary is determined by the explicit
     // is_historical flag set when the dataset was built, not by
     // inspecting era text -- historical videos each carry their own
@@ -457,17 +456,16 @@ function computePreset() {
 
     if (!historical.length || !contemporary.length) return null;
 
-    const totalTypes = SITE_DATA.videos.length ? allTypeEntries(SITE_DATA.videos[0]).length : 10;
+    const totalTypes = SITE_DATA.videos.length ? allTypeEntries(SITE_DATA.videos[0]).length : 12;
     const historicalHasFullyScored = historical.some(v => typeCoverageCount(v) === totalTypes);
 
     if (!historicalHasFullyScored) {
-        // The historical set currently has no fully-scored videos under
-        // this schema (a real, separate data gap, not a bug here) --
-        // rather than ever pairing a zero-coverage video against a
-        // fully-scored one, fall back to two fully-scored contemporary
-        // videos so the "never mix full vs. not-yet-computed" guarantee
-        // still holds, even though it means giving up the historical
-        // framing for this particular preset click.
+        // Defensive fallback only: as of the v11 dataset, every
+        // historical video is fully scored (confirmed directly), so
+        // this branch shouldn't actually trigger. Kept so a future
+        // historical-set expansion that briefly lacks full coverage
+        // degrades gracefully instead of ever pairing a zero-coverage
+        // video against a fully-scored one.
         const fullyScoredContemporary = contemporary.filter(v => typeCoverageCount(v) === totalTypes);
         const pool = fullyScoredContemporary.length >= 2 ? fullyScoredContemporary : contemporary;
         const first = pickRandom(pool);
