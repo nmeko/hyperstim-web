@@ -406,18 +406,10 @@ function renderFoundVideoDisplay(video) {
 
     ratingContainer.innerHTML = `
         ${video.live_analysis ? `<div class="live-analysis-badge">Live Analysis — not part of the permanent dataset</div>` : ""}
-        <div class="type-breakdown">
-            ${["pacing_intensification", "recovery_denial", "reward_patterning"].map(catKey => {
-                const catBand = bandFor(categoryPercentile(video, catKey));
-                return `
-                    <div class="type-row">
-                        <div class="rating-badge rating-${catBand.class}">${formatBand(catBand, categoryPercentile(video, catKey))}</div>
-                        <h4>${TAXONOMY_SCHEMA[catKey].label}</h4>
-                        <p>${TAXONOMY_SCHEMA[catKey].intro}</p>
-                    </div>
-                `;
-            }).join("")}
-        </div>
+        <h3>${video.title}</h3>
+        <p class="video-channel">${video.channel} &middot; ${video.era || ""}</p>
+        ${scoreMeterHTML(video)}
+        <button type="button" class="secondary copy-link-button" data-video-id="${video.video_id}">Copy Link to This Result</button>
     `;
 }
 
@@ -459,11 +451,7 @@ function renderDetailsPanel(video) {
         : "";
 
     detailsPanel.innerHTML = `
-        <h3>${video.title}</h3>
-        <p class="video-channel">${video.channel} &middot; ${video.era || ""}</p>
-        ${scoreMeterHTML(video)}
-        <button type="button" class="secondary copy-link-button" data-video-id="${video.video_id}">Copy Link to This Result</button>
-        <h4 id="sensory-details" class="sensory-details-heading">Sensory Details</h4>
+        <h4 id="sensory-details" class="sensory-details-heading sensory-details-heading-first">Sensory Details</h4>
         <div class="category-matrix">
             ${categoryMatrixHTML(video)}
         </div>

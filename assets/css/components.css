@@ -1029,6 +1029,12 @@ html[data-theme="dark"] .score-meter-marker {
     color: var(--text);
 }
 
+.sensory-details-heading-first {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
 .category-matrix {
     display: grid;
     gap: 1rem;
@@ -1111,6 +1117,11 @@ html[data-theme="dark"] .score-meter-marker {
 .matrix-category-bar-track {
     height: 10px;
     margin: 0 1rem 0.85rem;
+}
+
+.matrix-feature-bar-track {
+    height: 6px;
+    margin: 0.2rem 1rem 0.5rem;
 }
 
 .matrix-type-row summary::-webkit-details-marker {

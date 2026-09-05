@@ -283,12 +283,21 @@ function featureDetailRowsHTML(entry) {
         const roundedPct = pct !== null ? Math.round(pct) : null;
         const pctText = roundedPct !== null ? `${roundedPct}${ordinalSuffix(roundedPct)} percentile` : "Not enough data";
         const valueText = value !== null ? value : "n/a";
+        const band = bandFor(pct);
+        const barHTML = roundedPct === null
+            ? ""
+            : `
+                <div class="matrix-type-bar-track matrix-feature-bar-track" role="img" aria-label="${roundedPct} percent, ${band.label}">
+                    <div class="matrix-type-bar-fill rating-fill-${band.class}" style="width: ${Math.max(0, Math.min(100, roundedPct))}%;"></div>
+                </div>
+              `;
         return `
             <div class="matrix-feature-row">
                 <span class="matrix-feature-name">${readableFeatureName(key)}</span>
                 <span class="matrix-feature-value">${valueText}</span>
                 <span class="matrix-feature-percentile">${pctText}</span>
             </div>
+            ${barHTML}
         `;
     }).join("");
     return rows || `<p class="matrix-feature-empty">No measured features for this type yet.</p>`;
