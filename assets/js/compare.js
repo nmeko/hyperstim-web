@@ -21,33 +21,42 @@ const comparisonChart = document.getElementById("compare-chart");
 const SIMILARITY_THRESHOLD = 8; // percentile points
 
 /* =========================================================
-   1. Populate pickers, grouped by era via <optgroup>
+   1. Picker options are no longer all built upfront -- with
+   16,000+ videos, that meant creating tens of thousands of DOM
+   nodes per select on every page load, which is the real
+   source of the slowness. Instead, options are built on demand:
+   as the user types (see wirePickerSearch below), or via
+   ensureOption() for the few places code sets .value directly
+   without the user having typed anything (deep links, the
+   preset button, the swap button) -- a native <select>'s value
+   silently fails to apply if no matching <option> exists yet.
 ========================================================= */
 
-function populateSelect(select) {
-    if (!select) return;
-    const byEra = {};
-    SITE_DATA.videos.forEach(video => {
-        const era = video.era || "Contemporary";
-        byEra[era] = byEra[era] || [];
-        byEra[era].push(video);
-    });
-
-    Object.entries(byEra).forEach(([era, videos]) => {
-        const group = document.createElement("optgroup");
-        group.label = era;
-        videos.forEach(video => {
-            const option = document.createElement("option");
-            option.value = video.video_id;
-            // Several videos in the real dataset share an identical title
-            // (e.g. multiple "Hickory Dickory Dock" uploads) — the channel
-            // name is what actually tells them apart in the dropdown.
-            option.textContent = `${video.title}: ${video.channel}`;
-            group.appendChild(option);
-        });
-        select.appendChild(group);
-    });
+function optionLabel(video) {
+    // Several videos in the real dataset share an identical title
+    // (e.g. multiple "Hickory Dickory Dock" uploads) -- the channel
+    // name is what actually tells them apart in the dropdown.
+    return `${video.title}: ${video.channel}`;
 }
+
+function ensureOption(selectEl, videoId) {
+    if (!selectEl || !videoId) return;
+    if (selectEl.querySelector(`option[value="${videoId}"]`)) return;
+    const video = getVideo(videoId);
+    if (!video) return;
+    const option = document.createElement("option");
+    option.value = video.video_id;
+    option.textContent = optionLabel(video);
+    selectEl.appendChild(option);
+}
+
+function populateSelect(select) {
+    // Intentionally a no-op now beyond the placeholder already in the
+    // HTML -- kept as a named function since it's called at startup
+    // below, in case anything else comes to depend on an init hook here.
+}
+
+const SEARCH_RESULT_LIMIT = 50;
 
 /* =========================================================
    1b. Search/paste wiring for each picker: typing filters the
@@ -67,17 +76,46 @@ function wirePickerSearch(inputEl, selectEl, onSelect) {
         if (id) {
             const match = SITE_DATA.videos.find(v => v.video_id === id);
             if (match) {
+                ensureOption(selectEl, id);
                 selectEl.value = id;
                 onSelect();
                 return;
             }
         }
 
+        // Rebuild the option list from scratch for this query, rather
+        // than hiding/showing a pre-built set of 16,000+ options --
+        // capped at SEARCH_RESULT_LIMIT so an overly broad query (a
+        // single common letter, say) can't recreate the exact same
+        // problem this replaced.
+        const placeholder = selectEl.querySelector('option[value=""]');
+        selectEl.innerHTML = "";
+        if (placeholder) selectEl.appendChild(placeholder);
+
         const query = raw.toLowerCase();
-        const options = selectEl.querySelectorAll ? selectEl.querySelectorAll("option") : [];
-        options.forEach(opt => {
-            if (!opt.value) { opt.hidden = false; return; } // keep the placeholder visible
-            opt.hidden = query.length > 0 && !opt.textContent.toLowerCase().includes(query);
+        if (!query) return;
+
+        const matches = [];
+        for (const video of SITE_DATA.videos) {
+            if (optionLabel(video).toLowerCase().includes(query)) {
+                matches.push(video);
+                if (matches.length >= SEARCH_RESULT_LIMIT) break;
+            }
+        }
+
+        const contemporary = matches.filter(v => !v.is_historical);
+        const historical = matches.filter(v => v.is_historical);
+        [["Contemporary", contemporary], ["Historical", historical]].forEach(([label, videos]) => {
+            if (!videos.length) return;
+            const group = document.createElement("optgroup");
+            group.label = label;
+            videos.forEach(video => {
+                const option = document.createElement("option");
+                option.value = video.video_id;
+                option.textContent = optionLabel(video);
+                group.appendChild(option);
+            });
+            selectEl.appendChild(group);
         });
     });
 }
@@ -322,8 +360,8 @@ function applyDeepLinkFromHash() {
     const matchA = hash.match(/a=([A-Za-z0-9_-]{11})/);
     const matchB = hash.match(/b=([A-Za-z0-9_-]{11})/);
     if (!matchA && !matchB) return;
-    if (matchA) selectA.value = matchA[1];
-    if (matchB) selectB.value = matchB[1];
+    if (matchA) { ensureOption(selectA, matchA[1]); selectA.value = matchA[1]; }
+    if (matchB) { ensureOption(selectB, matchB[1]); selectB.value = matchB[1]; }
     renderComparison();
 }
 
@@ -408,11 +446,14 @@ function pickRandomPreferCovered(videos) {
 
 function computePreset() {
     // "Contemporary" is the fixed fallback era_for() assigns to any video
-    // historical-manifest.tsv doesn't cover; every other era string is
-    // whatever historical-manifest.tsv actually labels it (e.g. a specific
-    // decade), so we don't hardcode a particular historical label here.
-    const historical = SITE_DATA.videos.filter(v => v.era && v.era !== "Contemporary");
-    const contemporary = SITE_DATA.videos.filter(v => !v.era || v.era === "Contemporary");
+    // Historical vs. contemporary is determined by the explicit
+    // is_historical flag set when the dataset was built, not by
+    // inspecting era text -- historical videos each carry their own
+    // specific era label (e.g. a production year), so a text-based
+    // check would need to enumerate every possible non-"Contemporary"
+    // value rather than just checking one clear flag.
+    const historical = SITE_DATA.videos.filter(v => v.is_historical);
+    const contemporary = SITE_DATA.videos.filter(v => !v.is_historical);
 
     if (!historical.length || !contemporary.length) return null;
 
@@ -458,6 +499,8 @@ function applyPreset() {
         attempts++;
     }
 
+    ensureOption(selectA, result.repHistorical.video_id);
+    ensureOption(selectB, result.repContemporary.video_id);
     selectA.value = result.repHistorical.video_id;
     selectB.value = result.repContemporary.video_id;
     renderComparison();
@@ -477,6 +520,8 @@ if (presetButton) presetButton.addEventListener("click", applyPreset);
 if (swapButton) {
     swapButton.addEventListener("click", () => {
         const a = selectA.value, b = selectB.value;
+        ensureOption(selectA, b);
+        ensureOption(selectB, a);
         selectA.value = b;
         selectB.value = a;
         renderComparison();

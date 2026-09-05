@@ -253,6 +253,14 @@ function populateAgeFilter() {
         if (!v.target_age_group) return;
         counts[v.target_age_group] = (counts[v.target_age_group] || 0) + 1;
     });
+    if (Object.keys(counts).length === 0) {
+        // No video in this dataset has age-group data (true of the
+        // current v11 corpus) -- hide the whole filter rather than
+        // show a dropdown with nothing but "All ages" in it.
+        const wrapper = ageFilter.closest("label") || ageFilter;
+        wrapper.style.display = "none";
+        return;
+    }
     Object.keys(counts).sort().forEach(value => {
         const option = document.createElement("option");
         option.value = value;

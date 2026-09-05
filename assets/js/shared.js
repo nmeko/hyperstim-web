@@ -847,7 +847,12 @@ function findSimilarVideo(video) {
     const sameTopic = SITE_DATA.videos.filter(v => v.video_id !== video.video_id && deriveTopic(v) === topic);
     if (!sameTopic.length) return null;
 
-    const differentEra = sameTopic.filter(v => v.era !== video.era);
+    // "Different era" means contemporary-vs-historical specifically
+    // (the actual generational contrast this suggestion is meant to
+    // surface) -- not just any two videos with different era text,
+    // which would include two historical videos from different years
+    // that are both still historical.
+    const differentEra = sameTopic.filter(v => v.is_historical !== video.is_historical);
     const pool = differentEra.length ? differentEra : sameTopic;
     return pool[Math.floor(Math.random() * pool.length)];
 }
