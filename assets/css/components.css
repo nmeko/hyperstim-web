@@ -543,6 +543,39 @@ iframe {
     margin-right: 1rem;
 }
 
+/* Titles vary wildly in length -- from one short word to several lines.
+   Without a fixed height here, every card in a row ends up with its
+   channel name, badge, and score list starting at a different vertical
+   position, which is exactly what reads as "not lined up" even though
+   the cards' outer edges match. Clamping to 2 lines (line-height 1.25,
+   so 2 lines = 2.5em) gives every card the same starting point for
+   everything below the title, with longer titles truncated by an
+   ellipsis rather than pushing content down unevenly. */
+.video-card h3 {
+    min-height: 2.5em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Channel names are usually short, but a handful are long enough to
+   wrap onto a second line -- truncating instead keeps this row's
+   height identical across every card too. */
+.video-card .video-channel {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The quick label (age + band) is only shown when a video has a score
+   at all -- reserving its height even when absent (rare: only
+   unscored videos skip it) keeps the badge/score-list row that
+   follows at a consistent position across a full grid row. */
+.video-card .video-quick-label {
+    min-height: 1.2em;
+}
+
 .video-card ul.score-list {
     list-style: none;
     padding: 0;
