@@ -44,6 +44,16 @@
     vertical-align: middle;
 }
 
+.dot-scale-small {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+}
+
+.dot-scale-large {
+    font-size: 1.4rem;
+    letter-spacing: 0.12em;
+}
+
 .dot-scale-good { color: var(--good); }
 .dot-scale-moderate { color: var(--moderate); }
 .dot-scale-extreme { color: var(--extreme); }
@@ -320,7 +330,7 @@
 
 #workspace {
     display: grid;
-    grid-template-columns: minmax(0, 66%) minmax(0, 34%);
+    grid-template-columns: minmax(0, 68%) minmax(0, 32%);
     gap: 1.5rem;
     align-items: start;
 }
@@ -328,7 +338,6 @@
 #video-panel {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
 }
 
 #details-panel {
@@ -336,10 +345,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1.25rem;
-    max-height: calc(100vh - var(--sticky-header-height, 8rem) - 1.5rem);
-    overflow-y: auto;
-    position: sticky;
-    top: calc(var(--sticky-header-height, 8rem) + 0.75rem);
+    margin-top: 1.5rem;
 }
 
 #details-panel h3 { margin-top: 0; }
@@ -363,10 +369,6 @@
 @media (max-width: 900px) {
     #workspace {
         grid-template-columns: 1fr;
-    }
-    #details-panel {
-        position: static;
-        max-height: none;
     }
 }
 
@@ -581,6 +583,26 @@ iframe {
     padding: 0;
     font-size: 0.85rem;
     color: var(--muted);
+}
+
+.composite-dots-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0.5rem 0;
+}
+
+.category-dots-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.15rem 0;
+}
+
+.category-dots-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    min-width: 4.5rem;
 }
 
 .video-card .video-channel { color: var(--muted); font-size: 0.9rem; }
@@ -1110,8 +1132,29 @@ html[data-theme="dark"] .score-meter-marker {
 }
 
 .matrix-type-rows {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 480px) {
+    .matrix-type-rows-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Border only between rows within a column, and one dividing line
+       down the middle -- avoids doubled-up borders where two cells
+       would otherwise each draw their own edge along the same seam. */
+    .matrix-type-rows-grid .matrix-type-row:nth-child(odd) {
+        border-right: 1px solid var(--border);
+    }
+
+    .matrix-type-rows-grid .matrix-type-row:nth-last-child(2):nth-child(odd) {
+        border-bottom-left-radius: var(--radius);
+    }
+
+    .matrix-type-rows-grid .matrix-type-row:nth-last-child(2):nth-child(odd) summary {
+        border-bottom-left-radius: var(--radius);
+    }
 }
 
 .matrix-type-row {
@@ -1123,7 +1166,7 @@ html[data-theme="dark"] .score-meter-marker {
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.6rem 1rem 0.3rem;
+    padding: 0.6rem 1rem;
     flex-wrap: wrap;
     cursor: pointer;
     list-style: none;
@@ -1153,32 +1196,28 @@ details.matrix-type-row[open] .matrix-type-expand-icon {
     font-style: italic;
 }
 
-.matrix-type-bar-track {
-    height: 8px;
-    border-radius: 999px;
-    background: var(--surface-alt);
-    margin: 0 1rem 0.6rem;
-    overflow: hidden;
+.matrix-type-score,
+.matrix-category-score {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
 }
 
-.matrix-type-bar-fill {
-    height: 100%;
-    border-radius: 999px;
-    transition: width 0.3s ease;
+.matrix-type-value {
+    font-weight: 700;
+    font-size: 0.95rem;
 }
 
-.rating-fill-good { background: var(--good); }
-.rating-fill-moderate { background: var(--moderate); }
-.rating-fill-extreme { background: var(--extreme); }
-
-.matrix-category-bar-track {
-    height: 10px;
-    margin: 0 1rem 0.85rem;
+.matrix-category-value {
+    font-weight: 700;
+    font-size: 1.1rem;
 }
 
-.matrix-feature-bar-track {
-    height: 6px;
-    margin: 0.2rem 1rem 0.5rem;
+.matrix-type-no-data {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-style: italic;
 }
 
 .matrix-type-label {

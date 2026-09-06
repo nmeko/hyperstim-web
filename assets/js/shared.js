@@ -137,7 +137,7 @@ function formatBand(band, percentile) {
 // the raw number — how many of 5 dots are filled scales with percentile.
 // aria-hidden because the dots are purely decorative reinforcement; the
 // real accessible value is always the text label + number next to it.
-function dotScaleHTML(percentile) {
+function dotScaleHTML(percentile, size) {
     const band = bandFor(percentile);
     const filled = (percentile === null || percentile === undefined || Number.isNaN(percentile))
         ? 0
@@ -149,7 +149,8 @@ function dotScaleHTML(percentile) {
         return `<span class="dot" style="animation-delay: ${delay}s;">${char}</span>`;
     }).join("");
 
-    return `<span class="dot-scale dot-scale-${band.class}" aria-hidden="true">${dots}</span>`;
+    const sizeClass = size ? ` dot-scale-${size}` : "";
+    return `<span class="dot-scale dot-scale-${band.class}${sizeClass}" aria-hidden="true">${dots}</span>`;
 }
 
 // A visual marker showing where a score sits along the 0-100 dataset
@@ -196,13 +197,12 @@ const COMPOSITE_SCORE_EXPLANATION =
 // Used everywhere a video's top-level score badge appears, so the
 // explanation and markup stay consistent instead of being copy-pasted.
 function compositeBadgeHTML(video) {
-    const band = bandFor(video.composite_percentile);
+    const pct = video.composite_percentile;
     return `
-        <div class="rating-badge rating-${band.class}">
-            ${formatBand(band, video.composite_percentile)}
+        <div class="composite-dots-row">
+            ${dotScaleHTML(pct)}
             ${infoIconHTML(COMPOSITE_SCORE_EXPLANATION, "What does the overall score mean?")}
         </div>
-        ${dotScaleHTML(video.composite_percentile)}
     `;
 }
 
@@ -215,7 +215,6 @@ function compositeBadgeHTML(video) {
 // relying on color alone).
 function scoreMeterHTML(video) {
     const pct = video.composite_percentile;
-    const band = bandFor(pct);
     if (pct === null || pct === undefined || Number.isNaN(pct)) {
         return `
             <div class="score-meter score-meter-unknown">
@@ -228,40 +227,11 @@ function scoreMeterHTML(video) {
         <div class="score-meter">
             <div class="score-meter-header">
                 <span class="score-meter-value">${clamped}<span class="score-meter-unit">%</span></span>
-                <span class="rating-badge rating-${band.class}">
-                    ${formatBand(band, pct)}
-                    ${infoIconHTML(COMPOSITE_SCORE_EXPLANATION, "What does the overall score mean?")}
-                </span>
-            </div>
-            <p class="score-meter-summary">${plainLanguageSummary(band)}</p>
-            <div class="score-meter-track" role="img" aria-label="${clamped} percent, ${band.label}">
-                <div class="score-meter-marker" style="left: ${clamped}%;"></div>
-            </div>
-            <div class="score-meter-scale">
-                <span>Calm</span>
-                <span>Typical</span>
-                <span>Extreme</span>
+                ${dotScaleHTML(pct, "large")}
+                ${infoIconHTML(COMPOSITE_SCORE_EXPLANATION, "What does the overall score mean?")}
             </div>
         </div>
     `;
-}
-
-// A plain-English sentence to sit alongside the percentile and badge,
-// not replace them -- same three bands, same terminology used
-// everywhere else on the site (Good/Moderate/Extremely High), just
-// spelled out as a sentence a parent can read at a glance rather than
-// interpreting a percentage or a colored bar first.
-function plainLanguageSummary(band) {
-    switch (band.class) {
-        case "good":
-            return "This video is calmer than most videos in this dataset.";
-        case "moderate":
-            return "This video has typical production intensity for this dataset.";
-        case "extreme":
-            return "This video is substantially more intense than most videos in this dataset.";
-        default:
-            return "";
-    }
 }
 
 // A grouped matrix showing all 3 categories and their subcategories at
@@ -293,21 +263,12 @@ function featureDetailRowsHTML(entry) {
         const roundedPct = pct !== null ? Math.round(pct) : null;
         const pctText = roundedPct !== null ? `${roundedPct}${ordinalSuffix(roundedPct)} percentile` : "Not enough data";
         const valueText = value !== null ? value : "n/a";
-        const band = bandFor(pct);
-        const barHTML = roundedPct === null
-            ? ""
-            : `
-                <div class="matrix-type-bar-track matrix-feature-bar-track" role="img" aria-label="${roundedPct} percent, ${band.label}">
-                    <div class="matrix-type-bar-fill rating-fill-${band.class}" style="width: ${Math.max(0, Math.min(100, roundedPct))}%;"></div>
-                </div>
-              `;
         return `
             <div class="matrix-feature-row">
                 <span class="matrix-feature-name">${readableFeatureName(key)}</span>
                 <span class="matrix-feature-value">${valueText}</span>
-                <span class="matrix-feature-percentile">${pctText}</span>
+                <span class="matrix-feature-percentile">${pctText}${roundedPct !== null ? dotScaleHTML(pct, "small") : ""}</span>
             </div>
-            ${barHTML}
         `;
     }).join("");
     return rows || `<p class="matrix-feature-empty">No measured features for this type yet.</p>`;
@@ -316,19 +277,15 @@ function featureDetailRowsHTML(entry) {
 function categoryMatrixHTML(video) {
     return Object.entries(TAXONOMY_SCHEMA).map(([catKey, cat]) => {
         const catPct = categoryPercentile(video, catKey);
-        const catBand = bandFor(catPct);
+        const catClamped = (catPct === null || catPct === undefined || Number.isNaN(catPct)) ? null : Math.max(0, Math.min(100, Math.round(catPct)));
+
         const rows = Object.entries(cat.types).map(([typeKey, typeSchema]) => {
             const entry = video.taxonomy?.[catKey]?.types?.[typeKey];
             const pct = entry ? entry.percentile : null;
-            const band = bandFor(pct);
             const clamped = (pct === null || pct === undefined || Number.isNaN(pct)) ? null : Math.max(0, Math.min(100, Math.round(pct)));
-            const barHTML = clamped === null
-                ? ""
-                : `
-                    <div class="matrix-type-bar-track" role="img" aria-label="${clamped} percent, ${band.label}">
-                        <div class="matrix-type-bar-fill rating-fill-${band.class}" style="width: ${clamped}%;"></div>
-                    </div>
-                  `;
+            const valueHTML = clamped === null
+                ? `<span class="matrix-type-no-data">No data</span>`
+                : `<span class="matrix-type-value">${clamped}</span>${dotScaleHTML(pct, "small")}`;
             return `
                 <details class="matrix-type-row">
                     <summary>
@@ -337,9 +294,8 @@ function categoryMatrixHTML(video) {
                             <span class="matrix-type-label">${typeSchema.label}</span>
                             ${infoIconHTML(typeSchema.explanation, `Why does ${typeSchema.label} get this rating?`)}
                         </span>
-                        <span class="rating-badge rating-${band.class}">${formatBand(band, pct)}</span>
+                        <span class="matrix-type-score">${valueHTML}</span>
                     </summary>
-                    ${barHTML}
                     <div class="matrix-feature-detail">
                         ${featureDetailRowsHTML(entry)}
                     </div>
@@ -347,14 +303,9 @@ function categoryMatrixHTML(video) {
             `;
         }).join("");
 
-        const catClamped = (catPct === null || catPct === undefined || Number.isNaN(catPct)) ? null : Math.max(0, Math.min(100, Math.round(catPct)));
-        const catBarHTML = catClamped === null
-            ? ""
-            : `
-                <div class="matrix-type-bar-track matrix-category-bar-track" role="img" aria-label="${catClamped} percent, ${catBand.label}">
-                    <div class="matrix-type-bar-fill rating-fill-${catBand.class}" style="width: ${catClamped}%;"></div>
-                </div>
-              `;
+        const catValueHTML = catClamped === null
+            ? `<span class="matrix-type-no-data">No data</span>`
+            : `<span class="matrix-category-value">${catClamped}</span>${dotScaleHTML(catPct, "small")}`;
 
         return `
             <div class="matrix-category-group">
@@ -363,10 +314,9 @@ function categoryMatrixHTML(video) {
                         <h4>${cat.label}</h4>
                         ${infoIconHTML(cat.intro, `What does ${cat.label} measure?`, "down")}
                     </span>
-                    <span class="rating-badge rating-${catBand.class}">${formatBand(catBand, catPct)}</span>
+                    <span class="matrix-category-score">${catValueHTML}</span>
                 </div>
-                ${catBarHTML}
-                <div class="matrix-type-rows">
+                <div class="matrix-type-rows matrix-type-rows-grid">
                     ${rows}
                 </div>
             </div>
@@ -375,9 +325,14 @@ function categoryMatrixHTML(video) {
 }
 function categoryScoreLineHTML(video, categoryKey) {
     const pct = categoryPercentile(video, categoryKey);
-    const band = bandFor(pct);
     const schema = TAXONOMY_SCHEMA[categoryKey];
-    return `<li>${schema.short}: ${formatBand(band, pct)} ${infoIconHTML(schema.intro, `What does ${schema.label} mean?`)}</li>`;
+    return `
+        <li class="category-dots-row">
+            <span class="category-dots-label">${schema.short}</span>
+            ${dotScaleHTML(pct, "small")}
+            ${infoIconHTML(schema.intro, `What does ${schema.label} mean?`)}
+        </li>
+    `;
 }
 
 /* =========================================================
