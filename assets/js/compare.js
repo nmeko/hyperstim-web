@@ -300,7 +300,7 @@ function meterRow(value) {
         <div class="compare-meter-row">
             ${pct === null
                 ? `<span class="compare-meter-value">n/a</span>`
-                : `<span class="compare-meter-value">${pct}</span>${dotScaleHTML(value)}`}
+                : `<span class="compare-meter-value">${pct}</span>${dotScaleHTML(value, "large")}`}
         </div>
     `;
 }
@@ -389,10 +389,61 @@ function quickPreviewHTML(video) {
     `;
 }
 
+function miniCategoryDotsHTML(video) {
+    return Object.entries(TAXONOMY_SCHEMA).map(([catKey, cat]) => {
+        const pct = categoryPercentile(video, catKey);
+        return `
+            <li class="category-dots-row">
+                <span class="category-dots-label">${cat.short}</span>
+                ${dotScaleHTML(pct, "small")}
+            </li>
+        `;
+    }).join("");
+}
+
+function exampleCardHTML(referenceVideo, exampleVideo, heading) {
+    return `
+        <p class="compare-example-heading">${heading}</p>
+        <div class="compare-example-pair">
+            <div class="compare-example-side">
+                <p class="compare-example-title">${referenceVideo.title}</p>
+                <ul class="score-list">${miniCategoryDotsHTML(referenceVideo)}</ul>
+            </div>
+            <div class="compare-example-side">
+                <p class="compare-example-title">${exampleVideo.title}</p>
+                <ul class="score-list">${miniCategoryDotsHTML(exampleVideo)}</ul>
+            </div>
+        </div>
+        <button type="button" class="secondary compare-example-use" data-video-id="${exampleVideo.video_id}">
+            Use this comparison
+        </button>
+    `;
+}
+
+function updateExampleComparisons(videoA) {
+    const examplesBox = document.getElementById("compare-examples");
+    const sameCard = document.getElementById("compare-example-same");
+    const differentCard = document.getElementById("compare-example-different");
+    if (!examplesBox || !sameCard || !differentCard) return;
+
+    if (!videoA) {
+        examplesBox.hidden = true;
+        sameCard.innerHTML = "";
+        differentCard.innerHTML = "";
+        return;
+    }
+
+    const sameExample = findVideoInCategory(videoA, true);
+    const differentExample = findVideoInCategory(videoA, false);
+
+    sameCard.innerHTML = sameExample ? exampleCardHTML(videoA, sameExample, "Same-category example") : "";
+    differentCard.innerHTML = differentExample ? exampleCardHTML(videoA, differentExample, "Different-category example") : "";
+    examplesBox.hidden = !sameExample && !differentExample;
+}
+
 function updateQuickPreviews(videoA, videoB) {
     const previewA = document.getElementById("compare-a-preview");
     const previewB = document.getElementById("compare-b-preview");
-    const quickPicks = document.getElementById("compare-quick-picks");
 
     if (previewA) {
         if (videoA) { previewA.innerHTML = quickPreviewHTML(videoA); previewA.hidden = false; }
@@ -403,11 +454,11 @@ function updateQuickPreviews(videoA, videoB) {
         else { previewB.innerHTML = ""; previewB.hidden = true; }
     }
 
-    // The quick-pick shortcuts only make sense once Video A exists to
+    // The example comparisons only make sense once Video A exists to
     // compare against, and only add value while B isn't chosen yet --
     // once both are picked, the full results below already answer
     // "how do these two compare."
-    if (quickPicks) quickPicks.hidden = !videoA || !!videoB;
+    updateExampleComparisons(!videoB ? videoA : null);
 }
 
 // Picks a random video either sharing Video A's content category (a
@@ -576,21 +627,15 @@ if (swapButton) {
     });
 }
 
-const pickSameButton = document.getElementById("compare-pick-same");
-const pickDifferentButton = document.getElementById("compare-pick-different");
-
-function pickQuickCompare(wantSameCategory) {
-    const videoA = getVideo(selectA.value);
-    if (!videoA) return;
-    const match = findVideoInCategory(videoA, wantSameCategory);
-    if (!match) return;
-    ensureOption(selectB, match.video_id);
-    selectB.value = match.video_id;
+document.addEventListener("click", e => {
+    const useButton = e.target.closest(".compare-example-use");
+    if (!useButton) return;
+    const videoId = useButton.dataset.videoId;
+    if (!videoId) return;
+    ensureOption(selectB, videoId);
+    selectB.value = videoId;
     renderComparison();
-}
-
-if (pickSameButton) pickSameButton.addEventListener("click", () => pickQuickCompare(true));
-if (pickDifferentButton) pickDifferentButton.addEventListener("click", () => pickQuickCompare(false));
+});
 
 wirePickerSearch(searchA, selectA, renderComparison);
 wirePickerSearch(searchB, selectB, renderComparison);
