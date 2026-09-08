@@ -61,8 +61,8 @@ function populateSelect(select) {
     // recreating the tens-of-thousands-of-options performance problem
     // this replaced). A small, fixed starter list makes it obvious
     // right away that picking a video here does something, without
-    // bringing back that cost: capped well under SEARCH_RESULT_LIMIT,
-    // built once here rather than on every keystroke.
+    // bringing back that cost: built once here rather than on every
+    // keystroke, capped at a small fixed count regardless of dataset size.
     const scored = SITE_DATA.videos.filter(v => v.composite_percentile !== null && !v.is_historical);
     const sample = scored.slice(0, INITIAL_SUGGESTION_COUNT);
     if (!sample.length) return;
@@ -78,7 +78,7 @@ function populateSelect(select) {
     select.appendChild(group);
 }
 
-const SEARCH_RESULT_LIMIT = 50;
+const SEARCH_FIRST_BATCH_SIZE = 25;
 
 /* =========================================================
    1b. Search/paste wiring for each picker: typing filters the
@@ -88,11 +88,34 @@ const SEARCH_RESULT_LIMIT = 50;
    parsing logic.
 ========================================================= */
 
+function buildOptionsForMatches(selectEl, matches) {
+    const contemporary = matches.filter(v => !v.is_historical);
+    const historical = matches.filter(v => v.is_historical);
+    [["Contemporary", contemporary], ["Historical", historical]].forEach(([label, videos]) => {
+        if (!videos.length) return;
+        let group = Array.from(selectEl.children).find(c => c.tagName === "OPTGROUP" && c.label === label);
+        if (!group) {
+            group = document.createElement("optgroup");
+            group.label = label;
+            selectEl.appendChild(group);
+        }
+        videos.forEach(video => {
+            const option = document.createElement("option");
+            option.value = video.video_id;
+            option.textContent = optionLabel(video);
+            group.appendChild(option);
+        });
+    });
+}
+
 function wirePickerSearch(inputEl, selectEl, onSelect) {
     if (!inputEl || !selectEl) return;
+    let pendingAppend = null;
 
     inputEl.addEventListener("input", () => {
         const raw = inputEl.value.trim();
+
+        if (pendingAppend) { clearTimeout(pendingAppend); pendingAppend = null; }
 
         const id = youtubeId(raw);
         if (id) {
@@ -106,10 +129,7 @@ function wirePickerSearch(inputEl, selectEl, onSelect) {
         }
 
         // Rebuild the option list from scratch for this query, rather
-        // than hiding/showing a pre-built set of 16,000+ options --
-        // capped at SEARCH_RESULT_LIMIT so an overly broad query (a
-        // single common letter, say) can't recreate the exact same
-        // problem this replaced.
+        // than hiding/showing a pre-built set of 16,000+ options.
         const placeholder = selectEl.querySelector('option[value=""]');
         selectEl.innerHTML = "";
         if (placeholder) selectEl.appendChild(placeholder);
@@ -117,28 +137,31 @@ function wirePickerSearch(inputEl, selectEl, onSelect) {
         const query = raw.toLowerCase();
         if (!query) return;
 
-        const matches = [];
-        for (const video of SITE_DATA.videos) {
-            if (optionLabel(video).toLowerCase().includes(query)) {
-                matches.push(video);
-                if (matches.length >= SEARCH_RESULT_LIMIT) break;
-            }
-        }
+        // Matches against both title AND channel (optionLabel is
+        // "title: channel"), confirmed against real queries like
+        // "cocomelon" (234 matches, including channel-name-only hits)
+        // and "christmas" (437 matches). No cap on how many are found
+        // -- a hard cutoff means someone searching a common word never
+        // sees videos past whatever number was picked. Instead, the
+        // first batch renders immediately so typing stays responsive,
+        // and the remaining matches (if any) append moments later,
+        // arriving well before anyone finishes reading the first batch
+        // and scrolls for more.
+        const allMatches = SITE_DATA.videos.filter(v => optionLabel(v).toLowerCase().includes(query));
+        const firstBatch = allMatches.slice(0, SEARCH_FIRST_BATCH_SIZE);
+        const rest = allMatches.slice(SEARCH_FIRST_BATCH_SIZE);
 
-        const contemporary = matches.filter(v => !v.is_historical);
-        const historical = matches.filter(v => v.is_historical);
-        [["Contemporary", contemporary], ["Historical", historical]].forEach(([label, videos]) => {
-            if (!videos.length) return;
-            const group = document.createElement("optgroup");
-            group.label = label;
-            videos.forEach(video => {
-                const option = document.createElement("option");
-                option.value = video.video_id;
-                option.textContent = optionLabel(video);
-                group.appendChild(option);
-            });
-            selectEl.appendChild(group);
-        });
+        buildOptionsForMatches(selectEl, firstBatch);
+
+        if (rest.length) {
+            pendingAppend = setTimeout(() => {
+                // The query may have changed while this was pending;
+                // only append if this input's value still matches.
+                if (inputEl.value.trim().toLowerCase() !== query) return;
+                buildOptionsForMatches(selectEl, rest);
+                pendingAppend = null;
+            }, 30);
+        }
     });
 }
 
@@ -282,25 +305,34 @@ function typeRow(catKey, typeKey, type, videoA, videoB) {
     const highlight = gap !== null && gap > SIMILARITY_THRESHOLD;
     const cellClass = `matrix-cell${highlight ? " diff-highlight" : ""}`;
 
+    // Same convention as the Overall Score row: lower is calmer, so
+    // lower "wins" -- computed per metric, so one video can win
+    // overall while losing on some individual metrics and winning
+    // others, rather than one side sweeping everything.
+    const bothKnown = a?.percentile != null && b?.percentile != null;
+    const aWins = bothKnown && a.percentile < b.percentile;
+    const bWins = bothKnown && b.percentile < a.percentile;
+
     return `
         <div class="matrix-row">
             <div class="matrix-label">
                 <span>${type.label}</span>
                 <p class="matrix-label-note">${type.explanation}</p>
             </div>
-            <div class="${cellClass}">${meterRow(a?.percentile)}</div>
-            <div class="${cellClass}">${meterRow(b?.percentile)}</div>
+            <div class="${cellClass}">${meterRow(a?.percentile, aWins)}</div>
+            <div class="${cellClass}">${meterRow(b?.percentile, bWins)}</div>
         </div>
     `;
 }
 
-function meterRow(value) {
+function meterRow(value, isWinner) {
     const pct = value == null ? null : Math.round(value);
+    const crownHTML = isWinner ? `<span class="compare-winner-crown" title="Calmer on this metric">&#128081;</span>` : "";
     return `
         <div class="compare-meter-row">
             ${pct === null
                 ? `<span class="compare-meter-value">n/a</span>`
-                : `<span class="compare-meter-value">${pct}</span>${dotScaleHTML(value, "large")}`}
+                : `${crownHTML}<span class="compare-meter-value">${pct}</span>${dotScaleHTML(value, "small")}`}
         </div>
     `;
 }
@@ -308,11 +340,6 @@ function meterRow(value) {
 function renderTypeGrid(videoA, videoB) {
     const rows = [];
 
-    rows.push(`
-        <div class="matrix-group-row">
-            <div>Basic Information</div><div></div><div></div>
-        </div>
-    `);
     rows.push(basicInfoRow("Channel", videoA.channel, videoB.channel));
     rows.push(basicInfoRow("Era", videoA.era || "—", videoB.era || "—"));
     rows.push(overallScoreRowHTML(videoA, videoB));
@@ -447,12 +474,18 @@ function updateQuickPreviews(videoA, videoB) {
     const clearA = document.getElementById("compare-a-clear");
     const clearB = document.getElementById("compare-b-clear");
 
+    // Once both videos are chosen, the full results below already
+    // show everything these previews would -- keeping them visible
+    // too just duplicated the same scores in a second place above the
+    // real results.
+    const showPreviews = !videoA || !videoB;
+
     if (previewA) {
-        if (videoA) { previewA.innerHTML = quickPreviewHTML(videoA); previewA.hidden = false; }
+        if (videoA && showPreviews) { previewA.innerHTML = quickPreviewHTML(videoA); previewA.hidden = false; }
         else { previewA.innerHTML = ""; previewA.hidden = true; }
     }
     if (previewB) {
-        if (videoB) { previewB.innerHTML = quickPreviewHTML(videoB); previewB.hidden = false; }
+        if (videoB && showPreviews) { previewB.innerHTML = quickPreviewHTML(videoB); previewB.hidden = false; }
         else { previewB.innerHTML = ""; previewB.hidden = true; }
     }
     if (clearA) clearA.hidden = !videoA;

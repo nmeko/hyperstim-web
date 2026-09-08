@@ -4,6 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <script>
+    // Applies any saved theme/contrast preference synchronously, before
+    // the stylesheets below even load -- runs early enough to prevent
+    // the page from ever painting in the wrong theme first. The
+    // click-to-cycle behavior and "auto" (follow OS) handling still
+    // live in shared.js; this only ever needs to read localStorage
+    // once, matching what shared.js will apply moments later, so
+    // there's no visible handoff between the two.
+    (function () {
+        try {
+            var theme = localStorage.getItem("hyperstim_theme");
+            if (theme === "light" || theme === "dark") {
+                document.documentElement.dataset.theme = theme;
+            }
+            var contrast = localStorage.getItem("hyperstim_contrast");
+            if (contrast === "high") {
+                document.documentElement.dataset.contrast = "high";
+            }
+        } catch (e) {
+            // localStorage unavailable (private browsing, etc.) -- fall
+            // back to default styling, same as a first-time visitor.
+        }
+    })();
+    </script>
+
     <title>HyperStim Video Audit: Compare</title>
     <meta name="description" content="Compare two children's videos side by side across pacing, recovery, and reward-patterning scores.">
 
