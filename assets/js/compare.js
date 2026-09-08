@@ -6,7 +6,6 @@
 
 const selectA = document.getElementById("compare-a");
 const selectB = document.getElementById("compare-b");
-const presetButton = document.getElementById("compare-preset");
 const swapButton = document.getElementById("compare-swap");
 const searchA = document.getElementById("compare-a-search");
 const searchB = document.getElementById("compare-b-search");
@@ -511,9 +510,15 @@ function updateExampleComparisons(videoA) {
 function updatePickerState(videoA, videoB) {
     const clearA = document.getElementById("compare-a-clear");
     const clearB = document.getElementById("compare-b-clear");
+    const startingPoints = document.getElementById("compare-starting-points");
 
     if (clearA) clearA.hidden = !videoA;
     if (clearB) clearB.hidden = !videoB;
+
+    // The starting-points gallery only helps someone with no idea yet
+    // of what to compare -- once either video is picked, it's no
+    // longer relevant and just adds clutter.
+    if (startingPoints) startingPoints.hidden = !!(videoA || videoB);
 
     // The example comparisons only make sense once Video A exists to
     // compare against, and only add value while B isn't chosen yet --
@@ -674,28 +679,92 @@ function computePreset() {
     };
 }
 
-function applyPreset() {
-    let result = computePreset();
-    if (!result) return;
+// Three distinct, meaningful starting-point pairs for someone who
+// doesn't already have two specific videos in mind -- each highlights
+// a different kind of contrast, not just three random pairings.
+function computeStartingPoints() {
+    const points = [];
+    const scored = SITE_DATA.videos.filter(v => v.composite_percentile !== null);
 
-    // Avoid landing on the exact same pair twice in a row when there's
-    // more than one option — a couple of retries is enough to feel random
-    // without risking an infinite loop on a tiny dataset.
-    let attempts = 0;
-    while (
-        attempts < 5 &&
-        result.repHistorical.video_id === selectA.value &&
-        result.repContemporary.video_id === selectB.value
-    ) {
-        result = computePreset();
-        attempts++;
+    // 1. Era contrast: reuses the same historical-vs-contemporary logic
+    // as the old preset button, just folded into this richer gallery.
+    const eraPreset = computePreset();
+    if (eraPreset) {
+        points.push({
+            label: "Old vs. new",
+            description: "A calmer historical video against a more intense contemporary one.",
+            videoA: eraPreset.repHistorical,
+            videoB: eraPreset.repContemporary,
+        });
     }
 
-    ensureOption(selectA, result.repHistorical.video_id);
-    ensureOption(selectB, result.repContemporary.video_id);
-    selectA.value = result.repHistorical.video_id;
-    selectB.value = result.repContemporary.video_id;
-    renderComparison();
+    // 2. Same category, very different intensity -- tries a few
+    // categories in case the first randomly-picked one happens to lack
+    // videos at both ends of the scale.
+    const categories = [...new Set(scored.map(deriveTopic))].filter(Boolean);
+    for (let attempt = 0; attempt < categories.length; attempt++) {
+        const cat = categories[Math.floor(Math.random() * categories.length)];
+        const inCategory = scored.filter(v => deriveTopic(v) === cat);
+        const calm = inCategory.filter(v => v.composite_percentile < 40);
+        const intense = inCategory.filter(v => v.composite_percentile >= 70);
+        if (calm.length && intense.length) {
+            points.push({
+                label: `Calm vs. intense (${cat})`,
+                description: `Two ${cat.toLowerCase()} videos scored very differently.`,
+                videoA: pickRandom(calm),
+                videoB: pickRandom(intense),
+            });
+            break;
+        }
+    }
+
+    // 3. Different categories, similar overall intensity -- shows that
+    // two very different kinds of content can land at the same score.
+    for (let attempt = 0; attempt < 15; attempt++) {
+        const first = pickRandom(scored);
+        const firstTopic = deriveTopic(first);
+        const candidates = scored.filter(v =>
+            deriveTopic(v) !== firstTopic &&
+            Math.abs(v.composite_percentile - first.composite_percentile) < 8
+        );
+        if (candidates.length) {
+            const second = pickRandom(candidates);
+            points.push({
+                label: "Different type, similar score",
+                description: `${firstTopic} vs. ${deriveTopic(second)}, scoring about the same.`,
+                videoA: first,
+                videoB: second,
+            });
+            break;
+        }
+    }
+
+    return points;
+}
+
+function startingPointCardHTML(point) {
+    return `
+        <p class="compare-starting-point-title">${point.label}</p>
+        <p class="compare-starting-point-desc">${point.description}</p>
+        <div class="compare-starting-point-thumbs">
+            <img src="${youtubeThumbnail(point.videoA.video_id)}" alt="" loading="lazy">
+            <img src="${youtubeThumbnail(point.videoB.video_id)}" alt="" loading="lazy">
+        </div>
+        <button type="button" class="secondary compare-starting-point-use"
+            data-video-a="${point.videoA.video_id}" data-video-b="${point.videoB.video_id}">
+            Compare These
+        </button>
+    `;
+}
+
+function renderStartingPoints() {
+    const points = computeStartingPoints();
+    const containerIds = ["compare-starting-point-era", "compare-starting-point-intensity", "compare-starting-point-category"];
+    containerIds.forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = points[i] ? startingPointCardHTML(points[i]) : "";
+    });
 }
 
 /* =========================================================
@@ -704,10 +773,10 @@ function applyPreset() {
 
 populateSelect(selectA);
 populateSelect(selectB);
+renderStartingPoints();
 
 selectA.addEventListener("change", renderComparison);
 selectB.addEventListener("change", renderComparison);
-if (presetButton) presetButton.addEventListener("click", applyPreset);
 
 if (swapButton) {
     swapButton.addEventListener("click", () => {
@@ -727,6 +796,19 @@ document.addEventListener("click", e => {
     if (!videoId) return;
     ensureOption(selectB, videoId);
     selectB.value = videoId;
+    renderComparison();
+});
+
+document.addEventListener("click", e => {
+    const useButton = e.target.closest(".compare-starting-point-use");
+    if (!useButton) return;
+    const videoAId = useButton.dataset.videoA;
+    const videoBId = useButton.dataset.videoB;
+    if (!videoAId || !videoBId) return;
+    ensureOption(selectA, videoAId);
+    ensureOption(selectB, videoBId);
+    selectA.value = videoAId;
+    selectB.value = videoBId;
     renderComparison();
 });
 

@@ -899,9 +899,67 @@ iframe {
     .swipe-hint { display: block; }
 }
 
-#compare-preset {
-    display: block;
-    margin: 0 auto 1.5rem;
+.compare-starting-points {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.compare-starting-points-label {
+    text-align: center;
+    font-weight: 600;
+    margin: 0 0 1rem;
+}
+
+.compare-starting-points-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 700px) {
+    .compare-starting-points-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.compare-starting-point-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.compare-starting-point-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin: 0 0 0.3rem;
+}
+
+.compare-starting-point-desc {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+    flex-grow: 1;
+}
+
+.compare-starting-point-thumbs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.compare-starting-point-thumbs img {
+    width: 50%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+}
+
+.compare-starting-point-use {
+    width: 100%;
 }
 
 #compare-headline {
