@@ -113,11 +113,14 @@
     </div>
     <h2>Compare Two Videos</h2>
     <p>
-        Use the two dropdowns below to compare <strong>any two videos in the dataset</strong>,
-        not just the preset example. Type to filter either list, or paste a YouTube
-        link directly. Scores are relative to this dataset sample. See
-        <a href="index.html">how to read these scores</a>.
+        Type to search either video below, or paste a YouTube link directly — including a
+        video not yet in the dataset, which starts a live analysis automatically. Scores are
+        relative to this dataset sample. See <a href="index.html">how to read these scores</a>.
     </p>
+
+    <button id="compare-preset" type="button" class="secondary">
+        Or, show a random historical vs. contemporary example
+    </button>
 
     <div class="compare-selects">
         <label class="video-a">
@@ -153,10 +156,6 @@
             <div id="compare-example-different" class="compare-example-card"></div>
         </div>
     </div>
-
-    <button id="compare-preset" type="button" class="secondary">
-        Show a random historical vs. contemporary example
-    </button>
 </section>
 
 <section id="compare-results" hidden>
@@ -186,6 +185,7 @@
 
 <script src="assets/js/data.js"></script>
 <script src="assets/js/shared.js"></script>
+<script src="assets/js/live-analysis.js"></script>
 <script src="assets/js/compare.js"></script>
 
 </body>

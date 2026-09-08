@@ -154,8 +154,18 @@ function wirePickerSearch(inputEl, selectEl, suggestionsEl, onSelect) {
 
         const id = youtubeId(raw);
         if (id) {
-            const match = SITE_DATA.videos.find(v => v.video_id === id);
+            const match = getVideo(id);
             if (match) { selectVideo(match); return; }
+
+            if (typeof startLiveAnalysis === "function" && typeof looksLikeUnconfigured === "function" && !looksLikeUnconfigured()) {
+                suggestionsEl.hidden = false;
+                inputEl.setAttribute("aria-expanded", "true");
+                startLiveAnalysis(raw, suggestionsEl, (result) => {
+                    liveAnalyzedVideos[result.video_id] = result;
+                    selectVideo(result);
+                });
+                return;
+            }
         }
 
         const query = raw.toLowerCase();
@@ -215,7 +225,8 @@ function wirePickerSearch(inputEl, selectEl, suggestionsEl, onSelect) {
 ========================================================= */
 
 function getVideo(id) {
-    return SITE_DATA.videos.find(v => v.video_id === id) || null;
+    if (!id) return null;
+    return liveAnalyzedVideos[id] || SITE_DATA.videos.find(v => v.video_id === id) || null;
 }
 
 function biggestDifference(videoA, videoB) {
@@ -296,6 +307,7 @@ function videoCellHTML(video, side) {
     return `
         <div class="matrix-video-cell video-${side}">
             ${videoEmbedHTML(video)}
+            ${video.live_analysis ? `<div class="live-analysis-badge">Live Analysis — not part of the permanent dataset</div>` : ""}
             <h3>${video.title}</h3>
             <p class="video-channel">${video.channel} &middot; ${video.era || ""}</p>
         </div>

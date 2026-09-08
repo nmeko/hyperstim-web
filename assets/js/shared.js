@@ -7,6 +7,17 @@
  * ---------------------------------------------------------
  */
 
+// Videos analyzed via Live Analysis this session, keyed by video_id.
+// A completed live-analysis result is shaped identically to a
+// permanent dataset video (see live-analysis.js), so once it lands
+// here, any page can treat it exactly like one -- this is what lets
+// the Compare page compare a freshly-analyzed video against anything
+// else, dataset or also-freshly-analyzed, without a separate code
+// path. Session-only and in-memory by design: it should not survive
+// a page reload, since the whole point of Live Analysis is that
+// these videos are not part of the permanent, verified dataset.
+const liveAnalyzedVideos = {};
+
 /* =========================================================
    1. Taxonomy schema — the single source of truth for labels,
    plain-language explanations, and which raw feature(s) back

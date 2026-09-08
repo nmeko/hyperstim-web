@@ -69,7 +69,8 @@ function renderLiveAnalysisResult(result) {
     renderDetailsPanel(result);
 }
 
-async function pollJob(jobId, progressContainer) {
+async function pollJob(jobId, progressContainer, onSuccess) {
+    onSuccess = onSuccess || renderLiveAnalysisResult;
     for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
         await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
 
@@ -93,7 +94,7 @@ async function pollJob(jobId, progressContainer) {
         const data = await response.json();
 
         if (data.status === "done") {
-            renderLiveAnalysisResult(data.result);
+            onSuccess(data.result);
             return;
         }
         if (data.status === "error") {
@@ -112,7 +113,7 @@ async function pollJob(jobId, progressContainer) {
     );
 }
 
-async function startLiveAnalysis(url, progressContainer) {
+async function startLiveAnalysis(url, progressContainer, onSuccess) {
     progressContainer.innerHTML = liveAnalysisProgressHTML(STATUS_LABELS.queued);
 
     let response;
@@ -140,7 +141,7 @@ async function startLiveAnalysis(url, progressContainer) {
     }
 
     const { job_id } = await response.json();
-    pollJob(job_id, progressContainer);
+    pollJob(job_id, progressContainer, onSuccess);
 }
 
 // Hook: called from renderVideoPanel() in lookup.js when findVideo()
