@@ -250,7 +250,7 @@ function overallScoreCellHTML(pct, isWinner) {
     }
     const rounded = Math.round(pct);
     const crownHTML = isWinner ? `<span class="compare-winner-crown" title="Calmer of the two">&#128081;</span>` : "";
-    return `${crownHTML}<span class="compare-meter-value">${rounded}</span>${dotScaleHTML(pct)}`;
+    return `${crownHTML}<span class="compare-meter-value">${rounded}</span>${dotScaleHTML(pct, "large")}`;
 }
 
 function overallScoreRowHTML(videoA, videoB) {
@@ -300,7 +300,7 @@ function meterRow(value) {
         <div class="compare-meter-row">
             ${pct === null
                 ? `<span class="compare-meter-value">n/a</span>`
-                : `<span class="compare-meter-value">${pct}</span>${dotScaleHTML(value, "small")}`}
+                : `<span class="compare-meter-value">${pct}</span>${dotScaleHTML(value)}`}
         </div>
     `;
 }
@@ -372,9 +372,64 @@ function updateProgress(complete) {
     if (copyLinkButton) copyLinkButton.hidden = !complete;
 }
 
+function quickPreviewHTML(video) {
+    const categoryRows = Object.entries(TAXONOMY_SCHEMA).map(([catKey, cat]) => {
+        const pct = categoryPercentile(video, catKey);
+        return `
+            <li class="category-dots-row">
+                <span class="category-dots-label">${cat.short}</span>
+                ${dotScaleHTML(pct)}
+            </li>
+        `;
+    }).join("");
+
+    return `
+        <p class="compare-quick-preview-title">${video.title}</p>
+        <ul class="score-list">${categoryRows}</ul>
+    `;
+}
+
+function updateQuickPreviews(videoA, videoB) {
+    const previewA = document.getElementById("compare-a-preview");
+    const previewB = document.getElementById("compare-b-preview");
+    const quickPicks = document.getElementById("compare-quick-picks");
+
+    if (previewA) {
+        if (videoA) { previewA.innerHTML = quickPreviewHTML(videoA); previewA.hidden = false; }
+        else { previewA.innerHTML = ""; previewA.hidden = true; }
+    }
+    if (previewB) {
+        if (videoB) { previewB.innerHTML = quickPreviewHTML(videoB); previewB.hidden = false; }
+        else { previewB.innerHTML = ""; previewB.hidden = true; }
+    }
+
+    // The quick-pick shortcuts only make sense once Video A exists to
+    // compare against, and only add value while B isn't chosen yet --
+    // once both are picked, the full results below already answer
+    // "how do these two compare."
+    if (quickPicks) quickPicks.hidden = !videoA || !!videoB;
+}
+
+// Picks a random video either sharing Video A's content category (a
+// same-theme comparison) or deliberately not sharing it (a
+// cross-theme comparison), excluding Video A itself.
+function findVideoInCategory(referenceVideo, wantSameCategory) {
+    const refTopic = deriveTopic(referenceVideo);
+    const pool = SITE_DATA.videos.filter(v => {
+        if (v.video_id === referenceVideo.video_id) return false;
+        if (v.composite_percentile === null || v.composite_percentile === undefined) return false;
+        const sameTopic = deriveTopic(v) === refTopic;
+        return wantSameCategory ? sameTopic : !sameTopic;
+    });
+    if (!pool.length) return null;
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
 function renderComparison() {
     const videoA = getVideo(selectA.value);
     const videoB = getVideo(selectB.value);
+
+    updateQuickPreviews(videoA, videoB);
 
     if (!videoA || !videoB) {
         if (resultsSection) resultsSection.hidden = true;
@@ -520,6 +575,22 @@ if (swapButton) {
         renderComparison();
     });
 }
+
+const pickSameButton = document.getElementById("compare-pick-same");
+const pickDifferentButton = document.getElementById("compare-pick-different");
+
+function pickQuickCompare(wantSameCategory) {
+    const videoA = getVideo(selectA.value);
+    if (!videoA) return;
+    const match = findVideoInCategory(videoA, wantSameCategory);
+    if (!match) return;
+    ensureOption(selectB, match.video_id);
+    selectB.value = match.video_id;
+    renderComparison();
+}
+
+if (pickSameButton) pickSameButton.addEventListener("click", () => pickQuickCompare(true));
+if (pickDifferentButton) pickDifferentButton.addEventListener("click", () => pickQuickCompare(false));
 
 wirePickerSearch(searchA, selectA, renderComparison);
 wirePickerSearch(searchB, selectB, renderComparison);
