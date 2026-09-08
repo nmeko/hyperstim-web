@@ -444,6 +444,8 @@ function updateExampleComparisons(videoA) {
 function updateQuickPreviews(videoA, videoB) {
     const previewA = document.getElementById("compare-a-preview");
     const previewB = document.getElementById("compare-b-preview");
+    const clearA = document.getElementById("compare-a-clear");
+    const clearB = document.getElementById("compare-b-clear");
 
     if (previewA) {
         if (videoA) { previewA.innerHTML = quickPreviewHTML(videoA); previewA.hidden = false; }
@@ -453,12 +455,30 @@ function updateQuickPreviews(videoA, videoB) {
         if (videoB) { previewB.innerHTML = quickPreviewHTML(videoB); previewB.hidden = false; }
         else { previewB.innerHTML = ""; previewB.hidden = true; }
     }
+    if (clearA) clearA.hidden = !videoA;
+    if (clearB) clearB.hidden = !videoB;
 
     // The example comparisons only make sense once Video A exists to
     // compare against, and only add value while B isn't chosen yet --
     // once both are picked, the full results below already answer
     // "how do these two compare."
     updateExampleComparisons(!videoB ? videoA : null);
+}
+
+// Resets one side back to its untouched starting state: no selection,
+// no leftover search text, and the initial suggestion list rebuilt
+// (search wiring replaces this entirely again as soon as anyone
+// types, same as on first page load).
+function clearSelection(select, searchInput) {
+    select.value = "";
+    select.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select a video…";
+    select.appendChild(placeholder);
+    populateSelect(select);
+    if (searchInput) searchInput.value = "";
+    renderComparison();
 }
 
 // Picks a random video either sharing Video A's content category (a
@@ -655,6 +675,11 @@ document.addEventListener("click", e => {
 
 wirePickerSearch(searchA, selectA, renderComparison);
 wirePickerSearch(searchB, selectB, renderComparison);
+
+const clearAButton = document.getElementById("compare-a-clear");
+const clearBButton = document.getElementById("compare-b-clear");
+if (clearAButton) clearAButton.addEventListener("click", () => clearSelection(selectA, searchA));
+if (clearBButton) clearBButton.addEventListener("click", () => clearSelection(selectB, searchB));
 
 const hadDeepLink = /[ab]=[A-Za-z0-9_-]{11}/.test(location.hash);
 if (hadDeepLink) {

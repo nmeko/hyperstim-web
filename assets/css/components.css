@@ -735,6 +735,23 @@ iframe {
     font-size: 0.9rem;
 }
 
+.compare-clear-button {
+    align-self: flex-end;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-weight: normal;
+    font-size: 0.8rem;
+    padding: 0.2rem 0;
+    min-height: auto;
+    min-width: auto;
+}
+
+.compare-clear-button:hover {
+    color: var(--text);
+    text-decoration: underline;
+}
+
 .compare-quick-previews {
     display: flex;
     flex-wrap: wrap;
