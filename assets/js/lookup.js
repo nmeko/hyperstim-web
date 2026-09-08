@@ -43,6 +43,7 @@ const sortSelect = document.getElementById("sort-select");
 const clearFiltersButton = document.getElementById("clear-filters-button");
 const resultCount = document.getElementById("result-count");
 
+const resultsSection = document.getElementById("results");
 const videoContainer = document.getElementById("video-container");
 const ratingContainer = document.getElementById("rating-container");
 const detailsPanel = document.getElementById("details-panel");
@@ -112,7 +113,6 @@ function cardHTML(video) {
         <p class="video-channel">${video.channel}</p>
         ${quickLabelHTML}
         <p class="video-category">${topic} &middot; ${video.era || ""}</p>
-        ${compositeBadgeHTML(video)}
         <ul class="score-list">
             ${categoryScoreLineHTML(video, "pacing_intensification")}
             ${categoryScoreLineHTML(video, "sustained_sensory_intensity")}
@@ -120,7 +120,6 @@ function cardHTML(video) {
         </ul>
         <div class="card-actions">
             <button class="details-button" type="button" data-video="${video.video_id}">View Full Details</button>
-            <a class="secondary compare-link" href="compare.html#a=${video.video_id}">Compare This</a>
         </div>
     `;
 }
@@ -473,6 +472,10 @@ function renderDetailsPanel(video) {
 // "View Full Details" button on a card, and hash-based deep links. Updates
 // the video panel and the details panel together, per the split-screen spec.
 function showDetails(video, notFoundQuery, query) {
+    if (video || notFoundQuery) {
+        if (resultsSection) resultsSection.hidden = false;
+    }
+
     renderVideoPanel(video, notFoundQuery, query);
     renderDetailsPanel(video);
 
@@ -598,10 +601,6 @@ if (dropZone) {
 ========================================================= */
 
 document.addEventListener("click", e => {
-    // The "Compare This" link should navigate normally, not also
-    // trigger showDetails() on the current page it's about to leave.
-    if (e.target.closest(".compare-link")) return;
-
     const trigger = e.target.closest("[data-video]");
     if (!trigger) return;
     const video = SITE_DATA.videos.find(v => v.video_id === trigger.dataset.video);

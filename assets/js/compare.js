@@ -12,11 +12,11 @@ const searchA = document.getElementById("compare-a-search");
 const searchB = document.getElementById("compare-b-search");
 
 const headline = document.getElementById("compare-headline");
+const resultsSection = document.getElementById("compare-results");
 const copyLinkButton = document.getElementById("compare-copy-link");
 const similaritiesBox = document.getElementById("compare-similarities");
 const videoPair = document.getElementById("compare-video-pair");
 const typeGrid = document.getElementById("compare-type-grid");
-const comparisonChart = document.getElementById("compare-chart");
 
 const SIMILARITY_THRESHOLD = 8; // percentile points
 
@@ -50,10 +50,32 @@ function ensureOption(selectEl, videoId) {
     selectEl.appendChild(option);
 }
 
+const INITIAL_SUGGESTION_COUNT = 20;
+
 function populateSelect(select) {
-    // Intentionally a no-op now beyond the placeholder already in the
-    // HTML -- kept as a named function since it's called at startup
-    // below, in case anything else comes to depend on an init hook here.
+    if (!select || typeof SITE_DATA === "undefined" || !SITE_DATA.videos.length) return;
+
+    // An empty dropdown looks broken even though it's working as
+    // designed (real options build once you type -- see
+    // wirePickerSearch below, which is what actually keeps this from
+    // recreating the tens-of-thousands-of-options performance problem
+    // this replaced). A small, fixed starter list makes it obvious
+    // right away that picking a video here does something, without
+    // bringing back that cost: capped well under SEARCH_RESULT_LIMIT,
+    // built once here rather than on every keystroke.
+    const scored = SITE_DATA.videos.filter(v => v.composite_percentile !== null && !v.is_historical);
+    const sample = scored.slice(0, INITIAL_SUGGESTION_COUNT);
+    if (!sample.length) return;
+
+    const group = document.createElement("optgroup");
+    group.label = "Suggestions";
+    sample.forEach(video => {
+        const option = document.createElement("option");
+        option.value = video.video_id;
+        option.textContent = optionLabel(video);
+        group.appendChild(option);
+    });
+    select.appendChild(group);
 }
 
 const SEARCH_RESULT_LIMIT = 50;
@@ -208,7 +230,6 @@ function videoCellHTML(video, side) {
             ${videoEmbedHTML(video)}
             <h3>${video.title}</h3>
             <p class="video-channel">${video.channel} &middot; ${video.era || ""}</p>
-            ${compositeBadgeHTML(video)}
         </div>
     `;
 }
@@ -221,6 +242,27 @@ function renderVideoPair(videoA, videoB) {
             <div>${videoCellHTML(videoB, "b")}</div>
         </div>
     `;
+}
+
+function overallScoreCellHTML(pct, isWinner) {
+    if (pct === null || pct === undefined || Number.isNaN(pct)) {
+        return `<span class="compare-meter-value">n/a</span>`;
+    }
+    const rounded = Math.round(pct);
+    const crownHTML = isWinner ? `<span class="compare-winner-crown" title="Calmer of the two">&#128081;</span>` : "";
+    return `${crownHTML}<span class="compare-meter-value">${rounded}</span>${dotScaleHTML(pct)}`;
+}
+
+function overallScoreRowHTML(videoA, videoB) {
+    const pctA = videoA.composite_percentile;
+    const pctB = videoB.composite_percentile;
+    const bothKnown = pctA !== null && pctA !== undefined && pctB !== null && pctB !== undefined;
+    // Lower stimulation is the "win" here -- only crown one side when
+    // the two scores actually differ, not for an exact tie.
+    const aWins = bothKnown && pctA < pctB;
+    const bWins = bothKnown && pctB < pctA;
+
+    return basicInfoRow("Overall Score", overallScoreCellHTML(pctA, aWins), overallScoreCellHTML(pctB, bWins));
 }
 
 function basicInfoRow(label, valueA, valueB) {
@@ -246,21 +288,19 @@ function typeRow(catKey, typeKey, type, videoA, videoB) {
                 <span>${type.label}</span>
                 <p class="matrix-label-note">${type.explanation}</p>
             </div>
-            <div class="${cellClass}">${meterRow("Video A", a?.percentile, "a")}</div>
-            <div class="${cellClass}">${meterRow("Video B", b?.percentile, "b")}</div>
+            <div class="${cellClass}">${meterRow(a?.percentile)}</div>
+            <div class="${cellClass}">${meterRow(b?.percentile)}</div>
         </div>
     `;
 }
 
-function meterRow(label, value, side) {
-    const pct = value == null ? 0 : Math.round(value);
+function meterRow(value) {
+    const pct = value == null ? null : Math.round(value);
     return `
         <div class="compare-meter-row">
-            <span class="compare-meter-label">${label}</span>
-            <div class="compare-meter-track">
-                <div class="compare-meter-fill ${side}" style="width:${pct}%;"></div>
-            </div>
-            <span class="compare-meter-value">${value == null ? "n/a" : pct}</span>
+            ${pct === null
+                ? `<span class="compare-meter-value">n/a</span>`
+                : `<span class="compare-meter-value">${pct}</span>${dotScaleHTML(value, "small")}`}
         </div>
     `;
 }
@@ -275,7 +315,7 @@ function renderTypeGrid(videoA, videoB) {
     `);
     rows.push(basicInfoRow("Channel", videoA.channel, videoB.channel));
     rows.push(basicInfoRow("Era", videoA.era || "—", videoB.era || "—"));
-    rows.push(basicInfoRow("Overall Score", compositeBadgeHTML(videoA), compositeBadgeHTML(videoB)));
+    rows.push(overallScoreRowHTML(videoA, videoB));
 
     Object.entries(TAXONOMY_SCHEMA).forEach(([catKey, cat]) => {
         rows.push(`
@@ -292,50 +332,6 @@ function renderTypeGrid(videoA, videoB) {
 }
 
 /* =========================================================
-   2b. Comparison bar chart — a compact, all-in-one-glance
-   summary of both videos across all 12 pattern types. Reuses
-   meterRow() (the same bar component already used per-row in
-   the matrix above), so it's visually consistent and doesn't
-   need a separate accessible-alternative table — the bars are
-   real text-containing DOM elements, not an image needing a
-   workaround for screen readers.
-========================================================= */
-
-function renderComparisonChart(videoA, videoB) {
-    if (!comparisonChart) return;
-
-    const entriesA = allTypeEntries(videoA);
-    const entriesB = allTypeEntries(videoB);
-    const pairs = entriesA.map((entryA, i) => ({ a: entryA, b: entriesB[i] }));
-
-    const coveredA = pairs.filter(p => p.a.percentile != null).length;
-    const coveredB = pairs.filter(p => p.b.percentile != null).length;
-
-    if (coveredA < 3 || coveredB < 3) {
-        comparisonChart.innerHTML = `<p class="panel-placeholder">Not enough measured data on one or both videos yet for a chart. See the table above for what is measured.</p>`;
-        return;
-    }
-
-    const rows = pairs.map(p => {
-        const schema = TAXONOMY_SCHEMA[p.a.categoryKey].types[p.a.typeKey];
-        return `
-            <div class="chart-bar-group">
-                <div class="chart-bar-label">${schema.label}</div>
-                ${meterRow("Video A", p.a.percentile, "a")}
-                ${meterRow("Video B", p.b.percentile, "b")}
-            </div>
-        `;
-    }).join("");
-
-    comparisonChart.innerHTML = `
-        <div class="bar-chart">${rows}</div>
-        <p class="era-note">
-            Each pair of bars shows both videos' percentile score on that metric. The longer the bar,
-            the more intense that video scored relative to the rest of the dataset.
-        </p>
-    `;
-}
-
 /* =========================================================
    2c. Shareable comparison links — the current selection is
    always reflected in the URL hash, so the page can be
@@ -381,20 +377,19 @@ function renderComparison() {
     const videoB = getVideo(selectB.value);
 
     if (!videoA || !videoB) {
-        headline.textContent = "Select two videos above to compare.";
+        if (resultsSection) resultsSection.hidden = true;
         similaritiesBox.hidden = true;
         videoPair.innerHTML = "";
         typeGrid.innerHTML = "";
-        if (comparisonChart) comparisonChart.innerHTML = "";
         updateProgress(false);
         return;
     }
 
+    if (resultsSection) resultsSection.hidden = false;
     renderHeadline(videoA, videoB);
     renderSimilarities(videoA, videoB);
     renderVideoPair(videoA, videoB);
     renderTypeGrid(videoA, videoB);
-    renderComparisonChart(videoA, videoB);
     updateHashFromSelection();
     updateProgress(true);
     scrollResultsIntoView();

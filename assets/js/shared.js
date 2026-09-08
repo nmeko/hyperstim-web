@@ -869,104 +869,14 @@ function mascotSVG(size) {
     `;
 }
 
-/* =========================================================
-   14. "Currently Comparing" tray — a cross-page queue (backed
-   by localStorage) of up to 2 videos to compare. Clicking a
-   "Compare This" link (built by cardHTML in lookup.js) adds to
-   this queue instead of navigating immediately, via a delegated
-   click handler below. The link's href is left intact as a
-   no-JS fallback: if JS fails for any reason, it still navigates
-   directly to a valid pre-filled Compare page, same as before
-   this feature existed.
-========================================================= */
-
-const COMPARE_QUEUE_KEY = "hyperstim_compare_queue";
-
-function getCompareQueue() {
-    try {
-        const raw = localStorage.getItem(COMPARE_QUEUE_KEY);
-        const queue = raw ? JSON.parse(raw) : [];
-        return Array.isArray(queue) ? queue : [];
-    } catch (e) {
-        return [];
-    }
-}
-
-function setCompareQueue(queue) {
-    try { localStorage.setItem(COMPARE_QUEUE_KEY, JSON.stringify(queue)); } catch (e) { /* ignore */ }
-}
-
-function addToCompareQueue(videoId) {
-    let queue = getCompareQueue();
-    if (!queue.includes(videoId)) {
-        queue = [...queue, videoId].slice(-2); // keep at most the 2 most recently added
-        setCompareQueue(queue);
-    }
-    renderCompareTray();
-}
-
-function removeFromCompareQueue(videoId) {
-    setCompareQueue(getCompareQueue().filter(id => id !== videoId));
-    renderCompareTray();
-}
-
-function renderCompareTray() {
-    const queue = getCompareQueue();
-    let tray = document.getElementById("compare-tray");
-
-    if (!queue.length) {
-        if (tray) tray.remove();
-        return;
-    }
-
-    if (!tray) {
-        tray = document.createElement("div");
-        tray.id = "compare-tray";
-        document.body.appendChild(tray);
-    }
-
-    const itemsHTML = queue.map(id => {
-        const video = typeof SITE_DATA !== "undefined" ? SITE_DATA.videos.find(v => v.video_id === id) : null;
-        const title = video ? video.title : id;
-        return `
-            <span class="compare-tray-item">
-                ${title}
-                <button type="button" class="compare-tray-remove" data-video-id="${id}" aria-label="Remove ${title} from comparison">&times;</button>
-            </span>
-        `;
-    }).join("");
-
-    const actionHTML = queue.length === 2
-        ? `<a class="compare-tray-action" href="compare.html#a=${queue[0]}&b=${queue[1]}">Compare These Two &rarr;</a>`
-        : `<span class="compare-tray-hint">Add one more video to compare</span>`;
-
-    tray.innerHTML = `
-        <div class="compare-tray-inner">
-            <strong>Comparing:</strong>
-            ${itemsHTML}
-            ${actionHTML}
-            <button type="button" id="compare-tray-clear" class="secondary">Clear</button>
-        </div>
-    `;
-
-    tray.querySelectorAll(".compare-tray-remove").forEach(btn => {
-        btn.addEventListener("click", () => removeFromCompareQueue(btn.dataset.videoId));
-    });
-    const clearButton = document.getElementById("compare-tray-clear");
-    if (clearButton) clearButton.addEventListener("click", () => { setCompareQueue([]); renderCompareTray(); });
-}
-
 function initCompareTray() {
-    renderCompareTray(); // show it immediately if a queue already exists from a previous page
-
-    document.addEventListener("click", e => {
-        const link = e.target.closest ? e.target.closest(".compare-link") : null;
-        if (!link) return;
-        const match = link.getAttribute("href").match(/a=([A-Za-z0-9_-]{11})/);
-        if (!match) return; // malformed href — let the default navigation happen as a safe fallback
-        e.preventDefault();
-        addToCompareQueue(match[1]);
-    });
+    // Retired: the "Compare This" button and cross-page comparison
+    // queue this supported were removed from the Lookup page (the
+    // Compare page now owns all video selection directly, which
+    // tested better than a bottom tray people didn't notice and that
+    // didn't show what was actually being compared). Kept as a no-op
+    // rather than removing the call site in the main init sequence
+    // below, in case anything still expects this function to exist.
 }
 
 /* =========================================================

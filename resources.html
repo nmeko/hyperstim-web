@@ -83,7 +83,6 @@
         <li><a href="#dataset-scope">Dataset Scope</a></li>
         <li><a href="#non-goals">What This Site Is Not</a></li>
         <li><a href="#faq">Common Questions</a></li>
-        <li><a href="#research-paper">Research Paper</a></li>
     </ul>
 </nav>
 
@@ -164,9 +163,9 @@
     <p id="dataset-last-updated" class="disclaimer"></p>
     <p>
         The dataset is produced by a separate measurement pipeline (ffmpeg/OpenCV feature
-        extraction) and joined/percentile-ranked by <code>scripts/build_dataset.py</code>. This
-        site does not analyze video files itself and cannot score a video the pipeline hasn't
-        already measured. See the Lookup page for what happens when a search doesn't match.
+        extraction), joined and percentile-ranked against the rest of the dataset. A video not
+        yet in that dataset can still be scored directly from the Lookup page using Live
+        Analysis, which runs the same measurement pipeline on a fresh video in real time.
     </p>
 </section>
 
@@ -225,55 +224,17 @@
         <p>
             Every score comes from named, computationally-measured features (cut rate, loudness,
             color shifts, and so on), never a subjective judgment call. The full taxonomy and
-            feature list are documented above, and the data pipeline
-            (<code>scripts/build_dataset.py</code>) is openly available in the project repository.
+            feature list are documented above, and the data pipeline that produces them is openly
+            available in the project repository.
         </p>
     </details>
 </section>
 
-<section id="research-paper">
-    <h2>The Research Behind This Site</h2>
-    <p>
-        This taxonomy and pipeline are the basis of an academic paper currently
-        <strong>under peer review</strong> for publication. It has not yet been accepted or
-        published, so citation details below are provisional and will be updated once a final
-        venue and author list are public.
-    </p>
-
-    <p>Applying this taxonomy at scale, across roughly 5,300 videos spanning 1928 to 2026, the paper reports:</p>
-    <ul>
-        <li>
-            Within the same content category, quiet moments in children's educational content
-            have roughly halved since the late 20th century, alongside a meaningful rise in
-            average loudness, while editing pace has barely changed by comparison. The escalation
-            shows up mainly in sound, not editing.
-        </li>
-        <li>
-            Louder videos with fewer quiet moments tend to receive more views, an effect most
-            pronounced in gaming content, consistent with production choices being shaped by
-            what performs well on the platform.
-        </li>
-        <li>
-            Stimulation levels are notably consistent within individual channels and tend to rise
-            with audience size. Most measured features aren't incidental variation. They track
-            a channel's own established production style.
-        </li>
-    </ul>
-
-    <blockquote class="citation-block">
-        <p>
-            [Author(s) withheld for peer review]. 2026. <em>Hyper-Stimulation at Scale: A
-            Computational Audit of Stimulation in Child-Facing YouTube Videos.</em> Manuscript
-            under review.
-        </p>
-    </blockquote>
-
-    <p class="disclaimer">
-        Consistent with the paper's own stated scope: this research documents measurable
-        production patterns and their relationship to view counts and channel identity. It does
-        not establish that these patterns cause developmental harm. That would require a
-        separate experimental or longitudinal study.
-    </p>
+<section id="research-paper" hidden>
+    <!-- Intentionally hidden: the paper this would summarize is still being
+         updated, and the content here (including its stated dataset size
+         and specific findings) predates the current dataset. Restore once
+         there's an updated version to accurately reflect. -->
 </section>
 
 </main>
