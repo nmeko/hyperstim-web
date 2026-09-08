@@ -122,8 +122,11 @@
     <div class="compare-selects">
         <label class="video-a">
             Video A
-            <input type="text" id="compare-a-search" placeholder="Search, or paste a YouTube link…" autocomplete="off">
-            <select id="compare-a"><option value="">Select a video…</option></select>
+            <div class="compare-autocomplete-wrap">
+                <input type="text" id="compare-a-search" placeholder="Search, or paste a YouTube link…" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list">
+                <div id="compare-a-suggestions" class="compare-suggestions" hidden></div>
+            </div>
+            <select id="compare-a" hidden><option value="">Select a video…</option></select>
             <button type="button" id="compare-a-clear" class="compare-clear-button" hidden>&times; Clear</button>
         </label>
 
@@ -131,8 +134,11 @@
 
         <label class="video-b">
             Video B
-            <input type="text" id="compare-b-search" placeholder="Search, or paste a YouTube link…" autocomplete="off">
-            <select id="compare-b"><option value="">Select a video…</option></select>
+            <div class="compare-autocomplete-wrap">
+                <input type="text" id="compare-b-search" placeholder="Search, or paste a YouTube link…" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list">
+                <div id="compare-b-suggestions" class="compare-suggestions" hidden></div>
+            </div>
+            <select id="compare-b" hidden><option value="">Select a video…</option></select>
             <button type="button" id="compare-b-clear" class="compare-clear-button" hidden>&times; Clear</button>
         </label>
     </div>

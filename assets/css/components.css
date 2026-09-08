@@ -735,6 +735,56 @@ iframe {
     font-size: 0.9rem;
 }
 
+.compare-autocomplete-wrap {
+    position: relative;
+}
+
+.compare-suggestions {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    z-index: 40;
+    max-height: 320px;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.compare-suggestion-item {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: normal;
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-bottom: 1px solid var(--border);
+}
+
+.compare-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.compare-suggestion-item:hover,
+.compare-suggestion-item.is-highlighted {
+    background: var(--surface-alt);
+}
+
+.compare-suggestion-tag {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+}
+
 .compare-clear-button {
     align-self: flex-end;
     background: transparent;

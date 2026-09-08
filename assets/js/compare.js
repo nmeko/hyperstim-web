@@ -81,36 +81,71 @@ function populateSelect(select) {
 const SEARCH_FIRST_BATCH_SIZE = 25;
 
 /* =========================================================
-   1b. Search/paste wiring for each picker: typing filters the
-   dropdown's options live; pasting a recognizable YouTube URL
-   or video ID jumps straight to that video if it's in the
-   dataset. Reuses youtubeId() from shared.js — no duplicated
-   parsing logic.
+   1b. Search/paste wiring for each picker: a real autocomplete
+   popup, not a native <select> the user has to separately open.
+   Suggestions appear automatically below the input as you type
+   (and update as more results load in), same interaction model
+   as a typical search-suggestion box. Pasting a recognizable
+   YouTube URL or video ID jumps straight to that video if it's
+   in the dataset. The underlying <select> stays in the page,
+   hidden, purely as the state store the rest of this file
+   already reads from (getVideo(selectA.value), etc.) -- rebuilding
+   that plumbing wasn't necessary, only the visible interaction
+   needed to change.
 ========================================================= */
 
-function buildOptionsForMatches(selectEl, matches) {
-    const contemporary = matches.filter(v => !v.is_historical);
-    const historical = matches.filter(v => v.is_historical);
-    [["Contemporary", contemporary], ["Historical", historical]].forEach(([label, videos]) => {
-        if (!videos.length) return;
-        let group = Array.from(selectEl.children).find(c => c.tagName === "OPTGROUP" && c.label === label);
-        if (!group) {
-            group = document.createElement("optgroup");
-            group.label = label;
-            selectEl.appendChild(group);
-        }
-        videos.forEach(video => {
-            const option = document.createElement("option");
-            option.value = video.video_id;
-            option.textContent = optionLabel(video);
-            group.appendChild(option);
-        });
-    });
+function suggestionItemHTML(video) {
+    const tag = video.is_historical ? `<span class="compare-suggestion-tag">Historical</span>` : "";
+    return `<div class="compare-suggestion-item" data-video-id="${video.video_id}" role="option">${optionLabel(video)}${tag}</div>`;
 }
 
-function wirePickerSearch(inputEl, selectEl, onSelect) {
-    if (!inputEl || !selectEl) return;
+function wirePickerSearch(inputEl, selectEl, suggestionsEl, onSelect) {
+    if (!inputEl || !selectEl || !suggestionsEl) return;
     let pendingAppend = null;
+    let highlightedIndex = -1;
+
+    function items() {
+        return Array.from(suggestionsEl.querySelectorAll(".compare-suggestion-item"));
+    }
+
+    function setHighlight(index) {
+        const all = items();
+        all.forEach(el => el.classList.remove("is-highlighted"));
+        if (index >= 0 && index < all.length) {
+            all[index].classList.add("is-highlighted");
+            all[index].scrollIntoView({ block: "nearest" });
+        }
+        highlightedIndex = index;
+    }
+
+    function hideSuggestions() {
+        suggestionsEl.hidden = true;
+        suggestionsEl.innerHTML = "";
+        inputEl.setAttribute("aria-expanded", "false");
+        highlightedIndex = -1;
+    }
+
+    function selectVideo(video) {
+        ensureOption(selectEl, video.video_id);
+        selectEl.value = video.video_id;
+        inputEl.value = optionLabel(video);
+        hideSuggestions();
+        onSelect();
+    }
+
+    function renderSuggestions(matches) {
+        suggestionsEl.innerHTML = matches.map(suggestionItemHTML).join("");
+        suggestionsEl.hidden = matches.length === 0;
+        inputEl.setAttribute("aria-expanded", String(matches.length > 0));
+        highlightedIndex = -1;
+    }
+
+    suggestionsEl.addEventListener("click", e => {
+        const item = e.target.closest(".compare-suggestion-item");
+        if (!item) return;
+        const video = SITE_DATA.videos.find(v => v.video_id === item.dataset.videoId);
+        if (video) selectVideo(video);
+    });
 
     inputEl.addEventListener("input", () => {
         const raw = inputEl.value.trim();
@@ -120,22 +155,11 @@ function wirePickerSearch(inputEl, selectEl, onSelect) {
         const id = youtubeId(raw);
         if (id) {
             const match = SITE_DATA.videos.find(v => v.video_id === id);
-            if (match) {
-                ensureOption(selectEl, id);
-                selectEl.value = id;
-                onSelect();
-                return;
-            }
+            if (match) { selectVideo(match); return; }
         }
 
-        // Rebuild the option list from scratch for this query, rather
-        // than hiding/showing a pre-built set of 16,000+ options.
-        const placeholder = selectEl.querySelector('option[value=""]');
-        selectEl.innerHTML = "";
-        if (placeholder) selectEl.appendChild(placeholder);
-
         const query = raw.toLowerCase();
-        if (!query) return;
+        if (!query) { hideSuggestions(); return; }
 
         // Matches against both title AND channel (optionLabel is
         // "title: channel"), confirmed against real queries like
@@ -144,24 +168,45 @@ function wirePickerSearch(inputEl, selectEl, onSelect) {
         // -- a hard cutoff means someone searching a common word never
         // sees videos past whatever number was picked. Instead, the
         // first batch renders immediately so typing stays responsive,
-        // and the remaining matches (if any) append moments later,
-        // arriving well before anyone finishes reading the first batch
-        // and scrolls for more.
+        // and the remaining matches (if any) append moments later.
         const allMatches = SITE_DATA.videos.filter(v => optionLabel(v).toLowerCase().includes(query));
         const firstBatch = allMatches.slice(0, SEARCH_FIRST_BATCH_SIZE);
         const rest = allMatches.slice(SEARCH_FIRST_BATCH_SIZE);
 
-        buildOptionsForMatches(selectEl, firstBatch);
+        renderSuggestions(firstBatch);
 
         if (rest.length) {
             pendingAppend = setTimeout(() => {
                 // The query may have changed while this was pending;
                 // only append if this input's value still matches.
                 if (inputEl.value.trim().toLowerCase() !== query) return;
-                buildOptionsForMatches(selectEl, rest);
+                suggestionsEl.insertAdjacentHTML("beforeend", rest.map(suggestionItemHTML).join(""));
                 pendingAppend = null;
             }, 30);
         }
+    });
+
+    inputEl.addEventListener("keydown", e => {
+        const all = items();
+        if (e.key === "Escape") {
+            hideSuggestions();
+        } else if (e.key === "ArrowDown" && all.length) {
+            e.preventDefault();
+            setHighlight(Math.min(highlightedIndex + 1, all.length - 1));
+        } else if (e.key === "ArrowUp" && all.length) {
+            e.preventDefault();
+            setHighlight(Math.max(highlightedIndex - 1, 0));
+        } else if (e.key === "Enter" && highlightedIndex >= 0 && all[highlightedIndex]) {
+            e.preventDefault();
+            const video = SITE_DATA.videos.find(v => v.video_id === all[highlightedIndex].dataset.videoId);
+            if (video) selectVideo(video);
+        }
+    });
+
+    // Standard autocomplete behavior: dismiss on a click anywhere else,
+    // so the suggestion list doesn't stay parked open over other content.
+    document.addEventListener("click", e => {
+        if (!inputEl.contains(e.target) && !suggestionsEl.contains(e.target)) hideSuggestions();
     });
 }
 
@@ -502,15 +547,15 @@ function updateQuickPreviews(videoA, videoB) {
 // no leftover search text, and the initial suggestion list rebuilt
 // (search wiring replaces this entirely again as soon as anyone
 // types, same as on first page load).
-function clearSelection(select, searchInput) {
+function clearSelection(select, searchInput, suggestionsEl) {
     select.value = "";
     select.innerHTML = "";
     const placeholder = document.createElement("option");
     placeholder.value = "";
     placeholder.textContent = "Select a video…";
     select.appendChild(placeholder);
-    populateSelect(select);
     if (searchInput) searchInput.value = "";
+    if (suggestionsEl) { suggestionsEl.hidden = true; suggestionsEl.innerHTML = ""; }
     renderComparison();
 }
 
@@ -706,13 +751,15 @@ document.addEventListener("click", e => {
     renderComparison();
 });
 
-wirePickerSearch(searchA, selectA, renderComparison);
-wirePickerSearch(searchB, selectB, renderComparison);
+const suggestionsA = document.getElementById("compare-a-suggestions");
+const suggestionsB = document.getElementById("compare-b-suggestions");
+wirePickerSearch(searchA, selectA, suggestionsA, renderComparison);
+wirePickerSearch(searchB, selectB, suggestionsB, renderComparison);
 
 const clearAButton = document.getElementById("compare-a-clear");
 const clearBButton = document.getElementById("compare-b-clear");
-if (clearAButton) clearAButton.addEventListener("click", () => clearSelection(selectA, searchA));
-if (clearBButton) clearBButton.addEventListener("click", () => clearSelection(selectB, searchB));
+if (clearAButton) clearAButton.addEventListener("click", () => clearSelection(selectA, searchA, suggestionsA));
+if (clearBButton) clearBButton.addEventListener("click", () => clearSelection(selectB, searchB, suggestionsB));
 
 const hadDeepLink = /[ab]=[A-Za-z0-9_-]{11}/.test(location.hash);
 if (hadDeepLink) {
