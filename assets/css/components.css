@@ -779,6 +779,9 @@ iframe {
     display: grid;
     grid-template-columns: 1fr;
     gap: 1rem;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 0.25rem;
 }
 
 @media (min-width: 700px) {
