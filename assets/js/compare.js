@@ -444,23 +444,6 @@ function updateProgress(complete) {
     if (copyLinkButton) copyLinkButton.hidden = !complete;
 }
 
-function quickPreviewHTML(video) {
-    const categoryRows = Object.entries(TAXONOMY_SCHEMA).map(([catKey, cat]) => {
-        const pct = categoryPercentile(video, catKey);
-        return `
-            <li class="category-dots-row">
-                <span class="category-dots-label">${cat.short}</span>
-                ${dotScaleHTML(pct)}
-            </li>
-        `;
-    }).join("");
-
-    return `
-        <p class="compare-quick-preview-title">${video.title}</p>
-        <ul class="score-list">${categoryRows}</ul>
-    `;
-}
-
 function miniCategoryDotsHTML(video) {
     return Object.entries(TAXONOMY_SCHEMA).map(([catKey, cat]) => {
         const pct = categoryPercentile(video, catKey);
@@ -513,26 +496,10 @@ function updateExampleComparisons(videoA) {
     examplesBox.hidden = !sameExample && !differentExample;
 }
 
-function updateQuickPreviews(videoA, videoB) {
-    const previewA = document.getElementById("compare-a-preview");
-    const previewB = document.getElementById("compare-b-preview");
+function updatePickerState(videoA, videoB) {
     const clearA = document.getElementById("compare-a-clear");
     const clearB = document.getElementById("compare-b-clear");
 
-    // Once both videos are chosen, the full results below already
-    // show everything these previews would -- keeping them visible
-    // too just duplicated the same scores in a second place above the
-    // real results.
-    const showPreviews = !videoA || !videoB;
-
-    if (previewA) {
-        if (videoA && showPreviews) { previewA.innerHTML = quickPreviewHTML(videoA); previewA.hidden = false; }
-        else { previewA.innerHTML = ""; previewA.hidden = true; }
-    }
-    if (previewB) {
-        if (videoB && showPreviews) { previewB.innerHTML = quickPreviewHTML(videoB); previewB.hidden = false; }
-        else { previewB.innerHTML = ""; previewB.hidden = true; }
-    }
     if (clearA) clearA.hidden = !videoA;
     if (clearB) clearB.hidden = !videoB;
 
@@ -578,7 +545,7 @@ function renderComparison() {
     const videoA = getVideo(selectA.value);
     const videoB = getVideo(selectB.value);
 
-    updateQuickPreviews(videoA, videoB);
+    updatePickerState(videoA, videoB);
 
     if (!videoA || !videoB) {
         if (resultsSection) resultsSection.hidden = true;
