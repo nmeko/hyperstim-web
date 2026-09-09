@@ -99,8 +99,7 @@ function wirePickerSearch(inputEl, selectEl, suggestionsEl, onSelect) {
 ========================================================= */
 
 function getVideo(id) {
-    if (!id) return null;
-    return liveAnalyzedVideos[id] || SITE_DATA.videos.find(v => v.video_id === id) || null;
+    return findVideoById(id);
 }
 
 function biggestDifference(videoA, videoB) {
@@ -739,10 +738,12 @@ function updateSectionsForOpenDropdowns() {
 [searchA, searchB].forEach(el => {
     if (!el) return;
     el.addEventListener("input", updateSectionsForOpenDropdowns);
-    // Also catches Escape (which closes the dropdown without an
-    // "input" event) and the moment focus leaves with the dropdown
-    // still technically open from a prior keystroke.
-    el.addEventListener("keydown", () => setTimeout(updateSectionsForOpenDropdowns, 0));
+    // Escape closes the dropdown without firing an "input" event, so
+    // it needs its own check -- narrowed to just this key rather than
+    // every keystroke, which was running this twice per character typed.
+    el.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setTimeout(updateSectionsForOpenDropdowns, 0);
+    });
     el.addEventListener("blur", () => setTimeout(updateSectionsForOpenDropdowns, 150));
 });
 

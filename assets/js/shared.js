@@ -401,10 +401,15 @@ function suggestionItemHTML(video) {
     `;
 }
 
+let _videosByIdMap = null;
 function findVideoById(id) {
-    return (typeof liveAnalyzedVideos !== "undefined" && liveAnalyzedVideos[id])
-        || SITE_DATA.videos.find(v => v.video_id === id)
-        || null;
+    if (!id) return null;
+    if (typeof liveAnalyzedVideos !== "undefined" && liveAnalyzedVideos[id]) return liveAnalyzedVideos[id];
+    if (!_videosByIdMap) {
+        _videosByIdMap = new Map();
+        SITE_DATA.videos.forEach(v => _videosByIdMap.set(v.video_id, v));
+    }
+    return _videosByIdMap.get(id) || null;
 }
 
 const AUTOCOMPLETE_FIRST_BATCH_SIZE = 25;
