@@ -574,15 +574,19 @@ function computeStartingPoints() {
         });
     }
 
-    // 2. Same category, very different intensity. Hardcoded rather than
-    // randomly sampled: the category field comes from keyword matching
-    // and is occasionally wrong (confirmed case: a subtraction-quiz
-    // video was showing up under "Play & Activity"), so a random pick
-    // within a category risked surfacing a misclassified video in a
-    // gallery specifically meant to build trust in the taxonomy. These
-    // two are hand-checked against their real titles.
-    const musicCalm = getVideo("U0GC4dyoH40"); // "The Dragonfly" -- Sleep Tight Stories, score ~33
-    const musicIntense = getVideo("Bfy4GDe4-gI"); // "Princesses Song... Nursery Rhymes & Kids Songs" -- score ~83
+    // 2. Same category, very different intensity. Randomizes within
+    // small, manually-verified pools rather than the full category --
+    // the category field comes from keyword matching and is
+    // occasionally wrong (confirmed cases: a subtraction-quiz video
+    // under "Play & Activity", a phonics-reading video and a craft
+    // tutorial both under "Music"), so a random pick across an entire
+    // category risked surfacing a misclassified video in a gallery
+    // specifically meant to build trust in the taxonomy. Every video
+    // below was individually checked against its real title first.
+    const musicCalmPool = ["U0GC4dyoH40", "Ru-FYNywYQw", "k2CaYMt5DxI", "rbxAqyEYV6Y", "CcVd6vDdKKg", "6T_P-Z8bwH0", "gIigsPqZy48", "mDmag3ifayI"];
+    const musicIntensePool = ["Bfy4GDe4-gI", "YF57CEnmPVU", "TBf1h14Pfdo", "k9uSymNqbA4", "epPOnLuEa1g", "qG0MXKXKA9g", "2QWQCrh9AVQ", "Ypw6HvxIKwU"];
+    const musicCalm = pickRandom(musicCalmPool.map(getVideo).filter(Boolean));
+    const musicIntense = pickRandom(musicIntensePool.map(getVideo).filter(Boolean));
     if (musicCalm && musicIntense) {
         points.push({
             label: "Calm vs. intense (Music)",
@@ -592,12 +596,16 @@ function computeStartingPoints() {
         });
     }
 
-    // 3. Different categories, similar overall intensity -- also
-    // hardcoded for the same reason: both titles hand-checked to
-    // genuinely match their category (an alphabet-learning video and
-    // an actual mobile game, not a mislabeled toy-play or app video).
-    const educational = getVideo("-nijkPgBQVo"); // "ABC SAFARI Adventure: Learn the Alphabet!" -- score ~53.5
-    const gaming = getVideo("-_ZAPjTt0fQ"); // "Ambulance Rescue Driver Simulator... GamePlay #4" -- score ~53.5
+    // 3. Different categories, similar overall intensity -- same
+    // verified-pool approach. Gaming in particular had a high
+    // misclassification rate in casual sampling (toy unboxing, a
+    // family vlog, and language-learning content all turned up under
+    // "Gaming"), so this pool was filtered to videos with an explicit
+    // gaming signal in their title or channel, then hand-checked.
+    const educationalPool = ["-nijkPgBQVo", "1OPrLwTOq7I", "31E1p4auWWw", "3VtcXQs2oOc", "5TAIUCYMlIQ", "6WNHyAXIN8c", "7mGGwS-fTSU"];
+    const gamingPool = ["-_ZAPjTt0fQ", "-i0OIy5zSrs", "0N4ekTOrIz0", "5fbakcXMavc", "5xNotWSi92E", "6BYut4rDUmc", "77bmV0XB-hE", "C7WgK7rQUFE"];
+    const educational = pickRandom(educationalPool.map(getVideo).filter(Boolean));
+    const gaming = pickRandom(gamingPool.map(getVideo).filter(Boolean));
     if (educational && gaming) {
         points.push({
             label: "Different type, similar score",
