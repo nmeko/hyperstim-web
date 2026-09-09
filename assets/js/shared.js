@@ -375,6 +375,160 @@ function youtubeThumbnail(videoId) {
     return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
 }
 
+/* =========================================================
+   Shared autocomplete: a real suggestion popup (not a native
+   <select> or <datalist>) used identically by the Lookup and
+   Compare pages, so search and paste-a-link behave the same way
+   everywhere on the site. onSelectVideo(video) is the only piece
+   each page customizes -- what "picking a suggestion" actually
+   does differs (run a lookup vs. fill a comparison slot), but the
+   popup, matching, keyboard navigation, and live-analysis
+   fallback for an unrecognized pasted link are all identical.
+========================================================= */
+
+function suggestionItemHTML(video) {
+    const tag = video.is_historical ? `<span class="compare-suggestion-tag">Historical</span>` : "";
+    const fullText = `${video.title} — ${video.channel}`.replace(/"/g, "&quot;");
+    return `
+        <div class="compare-suggestion-item" data-video-id="${video.video_id}" role="option" title="${fullText}">
+            <img class="compare-suggestion-thumb" src="${youtubeThumbnail(video.video_id)}" alt="" loading="lazy">
+            <div class="compare-suggestion-text">
+                <span class="compare-suggestion-title">${video.title}</span>
+                <span class="compare-suggestion-channel">${video.channel}</span>
+            </div>
+            ${tag}
+        </div>
+    `;
+}
+
+function findVideoById(id) {
+    return (typeof liveAnalyzedVideos !== "undefined" && liveAnalyzedVideos[id])
+        || SITE_DATA.videos.find(v => v.video_id === id)
+        || null;
+}
+
+const AUTOCOMPLETE_FIRST_BATCH_SIZE = 25;
+
+function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo) {
+    if (!inputEl || !suggestionsEl) return;
+    let pendingAppend = null;
+    let highlightedIndex = -1;
+
+    function items() {
+        return Array.from(suggestionsEl.querySelectorAll(".compare-suggestion-item"));
+    }
+
+    function setHighlight(index) {
+        const all = items();
+        all.forEach(el => el.classList.remove("is-highlighted"));
+        if (index >= 0 && index < all.length) {
+            all[index].classList.add("is-highlighted");
+            all[index].scrollIntoView({ block: "nearest" });
+        }
+        highlightedIndex = index;
+    }
+
+    function hideSuggestions() {
+        suggestionsEl.hidden = true;
+        suggestionsEl.innerHTML = "";
+        inputEl.setAttribute("aria-expanded", "false");
+        highlightedIndex = -1;
+    }
+
+    function selectVideo(video) {
+        inputEl.value = `${video.title}: ${video.channel}`;
+        hideSuggestions();
+        onSelectVideo(video);
+    }
+
+    function renderSuggestions(matches) {
+        suggestionsEl.innerHTML = matches.map(suggestionItemHTML).join("");
+        suggestionsEl.hidden = matches.length === 0;
+        inputEl.setAttribute("aria-expanded", String(matches.length > 0));
+        highlightedIndex = -1;
+    }
+
+    suggestionsEl.addEventListener("click", e => {
+        const item = e.target.closest(".compare-suggestion-item");
+        if (!item) return;
+        const video = findVideoById(item.dataset.videoId);
+        if (video) selectVideo(video);
+    });
+
+    inputEl.addEventListener("input", () => {
+        const raw = inputEl.value.trim();
+
+        if (pendingAppend) { clearTimeout(pendingAppend); pendingAppend = null; }
+
+        const id = youtubeId(raw);
+        if (id) {
+            const match = findVideoById(id);
+            if (match) { selectVideo(match); return; }
+
+            if (typeof startLiveAnalysis === "function" && typeof looksLikeUnconfigured === "function" && !looksLikeUnconfigured()) {
+                suggestionsEl.hidden = false;
+                inputEl.setAttribute("aria-expanded", "true");
+                startLiveAnalysis(raw, suggestionsEl, (result) => {
+                    liveAnalyzedVideos[result.video_id] = result;
+                    selectVideo(result);
+                });
+                return;
+            }
+        }
+
+        const query = raw.toLowerCase();
+        if (!query) { hideSuggestions(); return; }
+
+        // Matches against both title AND channel, confirmed against real
+        // queries like "cocomelon" (234 matches, including channel-name-
+        // only hits) and "christmas" (437 matches). No cap on how many
+        // are found -- a hard cutoff means someone searching a common
+        // word never sees videos past whatever number was picked.
+        // Instead, the first batch renders immediately so typing stays
+        // responsive, and the remaining matches (if any) append moments
+        // later.
+        const allMatches = SITE_DATA.videos.filter(v =>
+            `${v.title}: ${v.channel}`.toLowerCase().includes(query)
+        );
+        const firstBatch = allMatches.slice(0, AUTOCOMPLETE_FIRST_BATCH_SIZE);
+        const rest = allMatches.slice(AUTOCOMPLETE_FIRST_BATCH_SIZE);
+
+        renderSuggestions(firstBatch);
+
+        if (rest.length) {
+            pendingAppend = setTimeout(() => {
+                if (inputEl.value.trim().toLowerCase() !== query) return;
+                suggestionsEl.insertAdjacentHTML("beforeend", rest.map(suggestionItemHTML).join(""));
+                pendingAppend = null;
+            }, 30);
+        }
+    });
+
+    inputEl.addEventListener("keydown", e => {
+        const all = items();
+        if (e.key === "Escape") {
+            hideSuggestions();
+        } else if (e.key === "ArrowDown" && all.length) {
+            e.preventDefault();
+            setHighlight(Math.min(highlightedIndex + 1, all.length - 1));
+        } else if (e.key === "ArrowUp" && all.length) {
+            e.preventDefault();
+            setHighlight(Math.max(highlightedIndex - 1, 0));
+        } else if (e.key === "Enter" && highlightedIndex >= 0 && all[highlightedIndex]) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const video = findVideoById(all[highlightedIndex].dataset.videoId);
+            if (video) selectVideo(video);
+        }
+    });
+
+    // Standard autocomplete behavior: dismiss on a click anywhere else,
+    // so the suggestion list doesn't stay parked open over other content.
+    document.addEventListener("click", e => {
+        if (!inputEl.contains(e.target) && !suggestionsEl.contains(e.target)) hideSuggestions();
+    });
+}
+
 // Single source of truth for embedding a video anywhere on the site.
 // If build_dataset.py's --availability-report found this video removed/
 // private/region-locked, show a graceful placeholder instead of a

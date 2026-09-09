@@ -701,7 +701,6 @@ iframe {
 
 #compare-picker {
     position: relative;
-    overflow: hidden;
 }
 
 #compare-picker > *:not(.dynamic-bg) {
@@ -743,7 +742,7 @@ iframe {
     position: absolute;
     top: calc(100% + 2px);
     left: 0;
-    right: 0;
+    width: max(100%, 380px);
     z-index: 1000;
     max-height: 320px;
     overflow-y: auto;
@@ -754,14 +753,12 @@ iframe {
 }
 
 .compare-suggestion-item {
-    padding: 0.55rem 0.75rem;
-    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
     font-weight: normal;
-    color: var(--text);
     cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     border-bottom: 1px solid var(--border);
 }
 
@@ -774,9 +771,40 @@ iframe {
     background: var(--surface-alt);
 }
 
+.compare-suggestion-thumb {
+    width: 64px;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.compare-suggestion-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.compare-suggestion-title {
+    font-size: 0.85rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.compare-suggestion-channel {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .compare-suggestion-tag {
     display: inline-block;
-    margin-left: 0.5rem;
+    flex-shrink: 0;
     padding: 0.05rem 0.4rem;
     font-size: 0.7rem;
     font-weight: 600;
@@ -900,9 +928,9 @@ iframe {
 }
 
 .compare-starting-points {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
 }
 
 .compare-starting-points-label {

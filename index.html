@@ -162,14 +162,19 @@
     <h2>Search, Paste a Link, or Drop a Video</h2>
 
     <div id="drop-zone">
-        <input
-            type="text"
-            id="video-input"
-            list="video-suggestions"
-            placeholder="Paste a YouTube URL, video ID, title, or channel"
-            aria-label="Video search, or paste a YouTube link"
-        />
-        <datalist id="video-suggestions"></datalist>
+        <div class="compare-autocomplete-wrap">
+            <input
+                type="text"
+                id="video-input"
+                placeholder="Paste a YouTube URL, video ID, title, or channel"
+                aria-label="Video search, or paste a YouTube link"
+                autocomplete="off"
+                role="combobox"
+                aria-expanded="false"
+                aria-autocomplete="list"
+            />
+            <div id="video-suggestions" class="compare-suggestions" hidden></div>
+        </div>
         <button id="lookup-button" type="button">Look Up Video</button>
         <p class="drop-hint">
             You can also drag a YouTube link here, or drop a local video file to match it by filename

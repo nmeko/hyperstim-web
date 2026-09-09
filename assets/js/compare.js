@@ -77,145 +77,20 @@ function populateSelect(select) {
     select.appendChild(group);
 }
 
-const SEARCH_FIRST_BATCH_SIZE = 25;
-
 /* =========================================================
-   1b. Search/paste wiring for each picker: a real autocomplete
-   popup, not a native <select> the user has to separately open.
-   Suggestions appear automatically below the input as you type
-   (and update as more results load in), same interaction model
-   as a typical search-suggestion box. Pasting a recognizable
-   YouTube URL or video ID jumps straight to that video if it's
-   in the dataset. The underlying <select> stays in the page,
-   hidden, purely as the state store the rest of this file
-   already reads from (getVideo(selectA.value), etc.) -- rebuilding
-   that plumbing wasn't necessary, only the visible interaction
-   needed to change.
+   1b. Search/paste wiring for each picker: uses the shared
+   autocomplete from shared.js (same popup, same behavior as the
+   Lookup page's search), adapted here only to also set this
+   picker's hidden <select> value, which is what the rest of this
+   file reads from (getVideo(selectA.value), etc.).
 ========================================================= */
 
-function suggestionItemHTML(video) {
-    const tag = video.is_historical ? `<span class="compare-suggestion-tag">Historical</span>` : "";
-    return `<div class="compare-suggestion-item" data-video-id="${video.video_id}" role="option">${optionLabel(video)}${tag}</div>`;
-}
-
 function wirePickerSearch(inputEl, selectEl, suggestionsEl, onSelect) {
-    if (!inputEl || !selectEl || !suggestionsEl) return;
-    let pendingAppend = null;
-    let highlightedIndex = -1;
-
-    function items() {
-        return Array.from(suggestionsEl.querySelectorAll(".compare-suggestion-item"));
-    }
-
-    function setHighlight(index) {
-        const all = items();
-        all.forEach(el => el.classList.remove("is-highlighted"));
-        if (index >= 0 && index < all.length) {
-            all[index].classList.add("is-highlighted");
-            all[index].scrollIntoView({ block: "nearest" });
-        }
-        highlightedIndex = index;
-    }
-
-    function hideSuggestions() {
-        suggestionsEl.hidden = true;
-        suggestionsEl.innerHTML = "";
-        inputEl.setAttribute("aria-expanded", "false");
-        highlightedIndex = -1;
-    }
-
-    function selectVideo(video) {
+    if (!selectEl) return;
+    wireAutocomplete(inputEl, suggestionsEl, (video) => {
         ensureOption(selectEl, video.video_id);
         selectEl.value = video.video_id;
-        inputEl.value = optionLabel(video);
-        hideSuggestions();
         onSelect();
-    }
-
-    function renderSuggestions(matches) {
-        suggestionsEl.innerHTML = matches.map(suggestionItemHTML).join("");
-        suggestionsEl.hidden = matches.length === 0;
-        inputEl.setAttribute("aria-expanded", String(matches.length > 0));
-        highlightedIndex = -1;
-    }
-
-    suggestionsEl.addEventListener("click", e => {
-        const item = e.target.closest(".compare-suggestion-item");
-        if (!item) return;
-        const video = SITE_DATA.videos.find(v => v.video_id === item.dataset.videoId);
-        if (video) selectVideo(video);
-    });
-
-    inputEl.addEventListener("input", () => {
-        const raw = inputEl.value.trim();
-
-        if (pendingAppend) { clearTimeout(pendingAppend); pendingAppend = null; }
-
-        const id = youtubeId(raw);
-        if (id) {
-            const match = getVideo(id);
-            if (match) { selectVideo(match); return; }
-
-            if (typeof startLiveAnalysis === "function" && typeof looksLikeUnconfigured === "function" && !looksLikeUnconfigured()) {
-                suggestionsEl.hidden = false;
-                inputEl.setAttribute("aria-expanded", "true");
-                startLiveAnalysis(raw, suggestionsEl, (result) => {
-                    liveAnalyzedVideos[result.video_id] = result;
-                    selectVideo(result);
-                });
-                return;
-            }
-        }
-
-        const query = raw.toLowerCase();
-        if (!query) { hideSuggestions(); return; }
-
-        // Matches against both title AND channel (optionLabel is
-        // "title: channel"), confirmed against real queries like
-        // "cocomelon" (234 matches, including channel-name-only hits)
-        // and "christmas" (437 matches). No cap on how many are found
-        // -- a hard cutoff means someone searching a common word never
-        // sees videos past whatever number was picked. Instead, the
-        // first batch renders immediately so typing stays responsive,
-        // and the remaining matches (if any) append moments later.
-        const allMatches = SITE_DATA.videos.filter(v => optionLabel(v).toLowerCase().includes(query));
-        const firstBatch = allMatches.slice(0, SEARCH_FIRST_BATCH_SIZE);
-        const rest = allMatches.slice(SEARCH_FIRST_BATCH_SIZE);
-
-        renderSuggestions(firstBatch);
-
-        if (rest.length) {
-            pendingAppend = setTimeout(() => {
-                // The query may have changed while this was pending;
-                // only append if this input's value still matches.
-                if (inputEl.value.trim().toLowerCase() !== query) return;
-                suggestionsEl.insertAdjacentHTML("beforeend", rest.map(suggestionItemHTML).join(""));
-                pendingAppend = null;
-            }, 30);
-        }
-    });
-
-    inputEl.addEventListener("keydown", e => {
-        const all = items();
-        if (e.key === "Escape") {
-            hideSuggestions();
-        } else if (e.key === "ArrowDown" && all.length) {
-            e.preventDefault();
-            setHighlight(Math.min(highlightedIndex + 1, all.length - 1));
-        } else if (e.key === "ArrowUp" && all.length) {
-            e.preventDefault();
-            setHighlight(Math.max(highlightedIndex - 1, 0));
-        } else if (e.key === "Enter" && highlightedIndex >= 0 && all[highlightedIndex]) {
-            e.preventDefault();
-            const video = SITE_DATA.videos.find(v => v.video_id === all[highlightedIndex].dataset.videoId);
-            if (video) selectVideo(video);
-        }
-    });
-
-    // Standard autocomplete behavior: dismiss on a click anywhere else,
-    // so the suggestion list doesn't stay parked open over other content.
-    document.addEventListener("click", e => {
-        if (!inputEl.contains(e.target) && !suggestionsEl.contains(e.target)) hideSuggestions();
     });
 }
 
@@ -684,7 +559,6 @@ function computePreset() {
 // a different kind of contrast, not just three random pairings.
 function computeStartingPoints() {
     const points = [];
-    const scored = SITE_DATA.videos.filter(v => v.composite_percentile !== null);
 
     // 1. Era contrast: reuses the same historical-vs-contemporary logic
     // as the old preset button, just folded into this richer gallery.
@@ -698,45 +572,37 @@ function computeStartingPoints() {
         });
     }
 
-    // 2. Same category, very different intensity -- tries a few
-    // categories in case the first randomly-picked one happens to lack
-    // videos at both ends of the scale.
-    const categories = [...new Set(scored.map(deriveTopic))].filter(Boolean);
-    for (let attempt = 0; attempt < categories.length; attempt++) {
-        const cat = categories[Math.floor(Math.random() * categories.length)];
-        const inCategory = scored.filter(v => deriveTopic(v) === cat);
-        const calm = inCategory.filter(v => v.composite_percentile < 40);
-        const intense = inCategory.filter(v => v.composite_percentile >= 70);
-        if (calm.length && intense.length) {
-            points.push({
-                label: `Calm vs. intense (${cat})`,
-                description: `Two ${cat.toLowerCase()} videos scored very differently.`,
-                videoA: pickRandom(calm),
-                videoB: pickRandom(intense),
-            });
-            break;
-        }
+    // 2. Same category, very different intensity. Hardcoded rather than
+    // randomly sampled: the category field comes from keyword matching
+    // and is occasionally wrong (confirmed case: a subtraction-quiz
+    // video was showing up under "Play & Activity"), so a random pick
+    // within a category risked surfacing a misclassified video in a
+    // gallery specifically meant to build trust in the taxonomy. These
+    // two are hand-checked against their real titles.
+    const musicCalm = getVideo("U0GC4dyoH40"); // "The Dragonfly" -- Sleep Tight Stories, score ~33
+    const musicIntense = getVideo("Bfy4GDe4-gI"); // "Princesses Song... Nursery Rhymes & Kids Songs" -- score ~83
+    if (musicCalm && musicIntense) {
+        points.push({
+            label: "Calm vs. intense (Music)",
+            description: "Two music videos scored very differently.",
+            videoA: musicCalm,
+            videoB: musicIntense,
+        });
     }
 
-    // 3. Different categories, similar overall intensity -- shows that
-    // two very different kinds of content can land at the same score.
-    for (let attempt = 0; attempt < 15; attempt++) {
-        const first = pickRandom(scored);
-        const firstTopic = deriveTopic(first);
-        const candidates = scored.filter(v =>
-            deriveTopic(v) !== firstTopic &&
-            Math.abs(v.composite_percentile - first.composite_percentile) < 8
-        );
-        if (candidates.length) {
-            const second = pickRandom(candidates);
-            points.push({
-                label: "Different type, similar score",
-                description: `${firstTopic} vs. ${deriveTopic(second)}, scoring about the same.`,
-                videoA: first,
-                videoB: second,
-            });
-            break;
-        }
+    // 3. Different categories, similar overall intensity -- also
+    // hardcoded for the same reason: both titles hand-checked to
+    // genuinely match their category (an alphabet-learning video and
+    // an actual mobile game, not a mislabeled toy-play or app video).
+    const educational = getVideo("-nijkPgBQVo"); // "ABC SAFARI Adventure: Learn the Alphabet!" -- score ~53.5
+    const gaming = getVideo("-_ZAPjTt0fQ"); // "Ambulance Rescue Driver Simulator... GamePlay #4" -- score ~53.5
+    if (educational && gaming) {
+        points.push({
+            label: "Different type, similar score",
+            description: "Educational vs. Gaming, scoring about the same.",
+            videoA: educational,
+            videoB: gaming,
+        });
     }
 
     return points;

@@ -283,34 +283,6 @@ function populatePopularityFilter() {
     });
 }
 
-// Search-suggestion datalist, populated from real video titles and channel
-// names so the search box behaves like a real app's search rather than a
-// guess-and-check text field with no feedback until you hit Enter.
-function populateVideoSuggestions() {
-    const datalist = document.getElementById("video-suggestions");
-    if (!datalist) return;
-
-    // Native browser <datalist> autocomplete can get sluggish with many
-    // thousands of options. Cap the total and prioritize: fully-scored
-    // video titles first (the most useful/complete results to search
-    // for), then unique channel names, up to the cap.
-    const SUGGESTION_CAP = 1000;
-    const titles = new Set();
-    const channels = new Set();
-
-    SITE_DATA.videos.forEach(video => {
-        if (video.title && video.composite_percentile !== null) titles.add(video.title);
-        if (video.channel) channels.add(video.channel);
-    });
-
-    const combined = [...titles, ...channels].slice(0, SUGGESTION_CAP);
-    combined.forEach(entry => {
-        const option = document.createElement("option");
-        option.value = entry;
-        datalist.appendChild(option);
-    });
-}
-
 function applyFiltersAndSort() {
     const query = (input.value || "").trim().toLowerCase();
     const topic = topicFilter ? topicFilter.value : "";
@@ -661,7 +633,14 @@ if (clearFiltersButton) {
 populateTopicFilter();
 populateAgeFilter();
 populatePopularityFilter();
-populateVideoSuggestions();
+
+const videoSuggestions = document.getElementById("video-suggestions");
+wireAutocomplete(input, videoSuggestions, (video) => {
+    input.value = "";
+    showDetails(video, false, "");
+    applyFiltersAndSort();
+});
+
 applyFiltersAndSort();
 if (audienceNote) audienceNote.textContent = AUDIENCE_COPY.parent;
 
