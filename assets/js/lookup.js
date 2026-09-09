@@ -291,11 +291,7 @@ function applyFiltersAndSort() {
     const sortMode = sortSelect ? sortSelect.value : "intense-first";
 
     let videos = SITE_DATA.videos.filter(video => {
-        const matchesQuery =
-            !query ||
-            video.title.toLowerCase().includes(query) ||
-            video.channel.toLowerCase().includes(query) ||
-            deriveTopic(video).toLowerCase().includes(query);
+        const matchesQuery = !query || getSearchText(video).includes(query);
         const matchesTopic = !topic || deriveTopic(video) === topic;
         const matchesAge = !age || video.target_age_group === age;
         const matchesPopularity = !popularity || video.popularity_tier === popularity;
@@ -344,11 +340,7 @@ function findVideo(rawInput) {
     }
     const query = (rawInput || "").trim().toLowerCase();
     if (!query) return null;
-    return SITE_DATA.videos.find(v =>
-        v.title.toLowerCase().includes(query) ||
-        v.channel.toLowerCase().includes(query) ||
-        (deriveTopic(v) || "").toLowerCase().includes(query)
-    ) || null;
+    return SITE_DATA.videos.find(v => getSearchText(v).includes(query)) || null;
 }
 
 function renderVideoPanel(video, notFoundQuery, query) {

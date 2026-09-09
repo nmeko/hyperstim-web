@@ -700,12 +700,21 @@ wirePickerSearch(searchB, selectB, suggestionsB, renderComparison);
 function updateSectionsForOpenDropdowns() {
     const dropdownOpen = (suggestionsA && !suggestionsA.hidden) || (suggestionsB && !suggestionsB.hidden);
     const startingPoints = document.getElementById("compare-starting-points");
+    const clearAll = document.getElementById("compare-clear-all");
     const videoA = getVideo(selectA.value);
     const videoB = getVideo(selectB.value);
 
     if (startingPoints && !videoA && !videoB) {
         // updatePickerState already owns hiding this once a video is picked.
         startingPoints.hidden = dropdownOpen;
+    }
+
+    // updatePickerState already owns showing this whenever a video is
+    // selected; while a dropdown is open, force it closed on top of
+    // that (it sits right below the pickers, in the same overlap zone
+    // as the sections above), then restore it once the dropdown closes.
+    if (clearAll) {
+        clearAll.hidden = dropdownOpen ? true : !(videoA || videoB);
     }
 
     // updateExampleComparisons already owns showing/hiding this based on
