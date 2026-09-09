@@ -750,6 +750,12 @@ iframe {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    animation: suggestions-fade-in 0.12s ease-out;
+}
+
+@keyframes suggestions-fade-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .compare-suggestion-item {
@@ -958,6 +964,13 @@ iframe {
     padding: 1rem;
     display: flex;
     flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.compare-starting-point-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
 }
 
 .compare-starting-point-title {

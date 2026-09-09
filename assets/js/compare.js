@@ -666,7 +666,9 @@ document.addEventListener("click", e => {
 });
 
 document.addEventListener("click", e => {
-    const useButton = e.target.closest(".compare-starting-point-use");
+    const card = e.target.closest(".compare-starting-point-card");
+    if (!card) return;
+    const useButton = card.querySelector(".compare-starting-point-use");
     if (!useButton) return;
     const videoAId = useButton.dataset.videoA;
     const videoBId = useButton.dataset.videoB;
@@ -682,6 +684,40 @@ const suggestionsA = document.getElementById("compare-a-suggestions");
 const suggestionsB = document.getElementById("compare-b-suggestions");
 wirePickerSearch(searchA, selectA, suggestionsA, renderComparison);
 wirePickerSearch(searchB, selectB, suggestionsB, renderComparison);
+
+// The starting-points gallery already hides once a video is picked
+// (see updatePickerState), but that alone left a window open where
+// the search dropdown and the gallery could occupy the same space at
+// once: focus an empty search box and the gallery is still showing
+// right where suggestions are about to appear. Hiding on focus closes
+// that window entirely, rather than relying on z-index stacking to
+// keep them from visually conflicting.
+let searchFocusCount = 0;
+function updateStartingPointsForFocus() {
+    const startingPoints = document.getElementById("compare-starting-points");
+    if (!startingPoints) return;
+    const videoA = getVideo(selectA.value);
+    const videoB = getVideo(selectB.value);
+    if (videoA || videoB) return; // updatePickerState already owns this case
+    startingPoints.hidden = searchFocusCount > 0;
+}
+[searchA, searchB].forEach(el => {
+    if (!el) return;
+    el.addEventListener("focus", () => {
+        searchFocusCount++;
+        updateStartingPointsForFocus();
+    });
+    el.addEventListener("blur", () => {
+        // Small delay so a click on a suggestion (which blurs the
+        // input first) has time to complete its selection before this
+        // re-evaluates -- if a video ends up selected, updatePickerState
+        // will already have the gallery hidden by then anyway.
+        setTimeout(() => {
+            searchFocusCount = Math.max(0, searchFocusCount - 1);
+            updateStartingPointsForFocus();
+        }, 150);
+    });
+});
 
 const clearAButton = document.getElementById("compare-a-clear");
 const clearBButton = document.getElementById("compare-b-clear");
