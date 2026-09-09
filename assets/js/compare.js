@@ -685,36 +685,49 @@ const suggestionsB = document.getElementById("compare-b-suggestions");
 wirePickerSearch(searchA, selectA, suggestionsA, renderComparison);
 wirePickerSearch(searchB, selectB, suggestionsB, renderComparison);
 
-// The starting-points gallery already hides once a video is picked
-// (see updatePickerState), but that alone left a window open where
-// the search dropdown and the gallery could occupy the same space at
-// once: focus an empty search box and the gallery is still showing
-// right where suggestions are about to appear. Hiding on focus closes
-// that window entirely, rather than relying on z-index stacking to
-// keep them from visually conflicting.
+// The starting-points gallery and the example-comparisons section both
+// sit in the normal page flow below the pickers, and either search
+// dropdown opening can extend down far enough to overlap them --
+// relying on z-index stacking alone left a window where a dropdown
+// and one of these sections could visually conflict. Hiding both
+// on focus closes that window entirely, regardless of dropdown height
+// or exact page layout.
 let searchFocusCount = 0;
-function updateStartingPointsForFocus() {
+function updateSectionsForFocus() {
     const startingPoints = document.getElementById("compare-starting-points");
-    if (!startingPoints) return;
     const videoA = getVideo(selectA.value);
     const videoB = getVideo(selectB.value);
-    if (videoA || videoB) return; // updatePickerState already owns this case
-    startingPoints.hidden = searchFocusCount > 0;
+
+    if (startingPoints && !videoA && !videoB) {
+        // updatePickerState already owns hiding this once a video is picked.
+        startingPoints.hidden = searchFocusCount > 0;
+    }
+
+    // updateExampleComparisons already owns showing/hiding this based on
+    // selection state; while a search box has focus, just force it
+    // closed on top of whatever that logic decided, then let the next
+    // real render restore the correct state.
+    if (searchFocusCount > 0) {
+        const examplesBox = document.getElementById("compare-examples");
+        if (examplesBox) examplesBox.hidden = true;
+    } else if (videoA && !videoB) {
+        updateExampleComparisons(videoA);
+    }
 }
 [searchA, searchB].forEach(el => {
     if (!el) return;
     el.addEventListener("focus", () => {
         searchFocusCount++;
-        updateStartingPointsForFocus();
+        updateSectionsForFocus();
     });
     el.addEventListener("blur", () => {
         // Small delay so a click on a suggestion (which blurs the
         // input first) has time to complete its selection before this
         // re-evaluates -- if a video ends up selected, updatePickerState
-        // will already have the gallery hidden by then anyway.
+        // will already have the relevant section hidden by then anyway.
         setTimeout(() => {
             searchFocusCount = Math.max(0, searchFocusCount - 1);
-            updateStartingPointsForFocus();
+            updateSectionsForFocus();
         }, 150);
     });
 });
