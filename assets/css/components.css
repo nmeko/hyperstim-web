@@ -736,7 +736,7 @@ iframe {
 
 #compare-clear-all {
     display: block;
-    margin: 0.75rem auto 0;
+    margin: 0 auto 1rem;
 }
 
 .compare-autocomplete-wrap {

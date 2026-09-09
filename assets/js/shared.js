@@ -474,11 +474,17 @@ function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo) {
         if (video) selectVideo(video);
     });
 
+    let searchDebounce = null;
+
     inputEl.addEventListener("input", () => {
         const raw = inputEl.value.trim();
 
         if (pendingAppend) { clearTimeout(pendingAppend); pendingAppend = null; }
+        if (searchDebounce) { clearTimeout(searchDebounce); searchDebounce = null; }
 
+        // Pasting a recognizable link is a deliberate, one-time action
+        // (not rapid typing), so this check stays immediate rather than
+        // debounced along with the rest.
         const id = youtubeId(raw);
         if (id) {
             const match = findVideoById(id);
@@ -498,30 +504,42 @@ function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo) {
         const query = raw.toLowerCase();
         if (!query) { hideSuggestions(); return; }
 
-        // Matches against both title AND channel, confirmed against real
-        // queries like "cocomelon" (234 matches, including channel-name-
-        // only hits) and "christmas" (437 matches). No cap on how many
-        // are found -- a hard cutoff means someone searching a common
-        // word never sees videos past whatever number was picked.
-        // Instead, the first batch renders immediately so typing stays
-        // responsive, and the remaining matches (if any) append moments
-        // later. Also matches against the category (deriveTopic), so
-        // typing "gaming" or "educational" surfaces videos in that
-        // category even when that word never appears in their title or
-        // channel name.
-        const allMatches = SITE_DATA.videos.filter(v => getSearchText(v).includes(query));
-        const firstBatch = allMatches.slice(0, AUTOCOMPLETE_FIRST_BATCH_SIZE);
-        const rest = allMatches.slice(AUTOCOMPLETE_FIRST_BATCH_SIZE);
+        // The actual filtering + rendering is debounced: with 16,675
+        // videos, rebuilding and inserting up to 25 suggestion items
+        // (each with a thumbnail image) is real work, and doing it on
+        // every single keystroke -- rather than once typing actually
+        // pauses -- was making the input itself feel laggy, since that
+        // rendering competes with the browser's next paint. A short
+        // 120ms delay is well under what reads as "instant" once
+        // typing stops, but skips the work entirely for keystrokes
+        // that are about to be superseded by the next one anyway.
+        searchDebounce = setTimeout(() => {
+            // Matches against both title AND channel, confirmed against
+            // real queries like "cocomelon" (234 matches, including
+            // channel-name-only hits) and "christmas" (437 matches). No
+            // cap on how many are found -- a hard cutoff means someone
+            // searching a common word never sees videos past whatever
+            // number was picked. Instead, the first batch renders
+            // immediately so typing stays responsive, and the remaining
+            // matches (if any) append moments later. Also matches
+            // against the category (deriveTopic), so typing "gaming" or
+            // "educational" surfaces videos in that category even when
+            // that word never appears in their title or channel name.
+            const allMatches = SITE_DATA.videos.filter(v => getSearchText(v).includes(query));
+            const firstBatch = allMatches.slice(0, AUTOCOMPLETE_FIRST_BATCH_SIZE);
+            const rest = allMatches.slice(AUTOCOMPLETE_FIRST_BATCH_SIZE);
 
-        renderSuggestions(firstBatch);
+            renderSuggestions(firstBatch);
 
-        if (rest.length) {
-            pendingAppend = setTimeout(() => {
-                if (inputEl.value.trim().toLowerCase() !== query) return;
-                suggestionsEl.insertAdjacentHTML("beforeend", rest.map(suggestionItemHTML).join(""));
-                pendingAppend = null;
-            }, 30);
-        }
+            if (rest.length) {
+                pendingAppend = setTimeout(() => {
+                    if (inputEl.value.trim().toLowerCase() !== query) return;
+                    suggestionsEl.insertAdjacentHTML("beforeend", rest.map(suggestionItemHTML).join(""));
+                    pendingAppend = null;
+                }, 30);
+            }
+            searchDebounce = null;
+        }, 120);
     });
 
     inputEl.addEventListener("keydown", e => {
