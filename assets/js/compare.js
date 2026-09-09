@@ -385,10 +385,12 @@ function updateExampleComparisons(videoA) {
 function updatePickerState(videoA, videoB) {
     const clearA = document.getElementById("compare-a-clear");
     const clearB = document.getElementById("compare-b-clear");
+    const clearAll = document.getElementById("compare-clear-all");
     const startingPoints = document.getElementById("compare-starting-points");
 
     if (clearA) clearA.hidden = !videoA;
     if (clearB) clearB.hidden = !videoB;
+    if (clearAll) clearAll.hidden = !(videoA || videoB);
 
     // The starting-points gallery only helps someone with no idea yet
     // of what to compare -- once either video is picked, it's no
@@ -687,27 +689,30 @@ wirePickerSearch(searchB, selectB, suggestionsB, renderComparison);
 
 // The starting-points gallery and the example-comparisons section both
 // sit in the normal page flow below the pickers, and either search
-// dropdown opening can extend down far enough to overlap them --
-// relying on z-index stacking alone left a window where a dropdown
-// and one of these sections could visually conflict. Hiding both
-// on focus closes that window entirely, regardless of dropdown height
-// or exact page layout.
-let searchFocusCount = 0;
-function updateSectionsForFocus() {
+// dropdown opening can extend down far enough to overlap them. Rather
+// than hiding these sections as soon as a search box is merely
+// focused (which removed them even before anyone had typed anything,
+// let alone opened a dropdown), this only reacts once a dropdown
+// actually has suggestions showing -- checked right after
+// wireAutocomplete's own "input" listener above has already run and
+// updated suggestionsEl.hidden, since listeners on the same event
+// fire in registration order.
+function updateSectionsForOpenDropdowns() {
+    const dropdownOpen = (suggestionsA && !suggestionsA.hidden) || (suggestionsB && !suggestionsB.hidden);
     const startingPoints = document.getElementById("compare-starting-points");
     const videoA = getVideo(selectA.value);
     const videoB = getVideo(selectB.value);
 
     if (startingPoints && !videoA && !videoB) {
         // updatePickerState already owns hiding this once a video is picked.
-        startingPoints.hidden = searchFocusCount > 0;
+        startingPoints.hidden = dropdownOpen;
     }
 
     // updateExampleComparisons already owns showing/hiding this based on
-    // selection state; while a search box has focus, just force it
-    // closed on top of whatever that logic decided, then let the next
-    // real render restore the correct state.
-    if (searchFocusCount > 0) {
+    // selection state; while a dropdown is open, force it closed on top
+    // of whatever that logic decided, then restore the correct state
+    // once the dropdown closes again.
+    if (dropdownOpen) {
         const examplesBox = document.getElementById("compare-examples");
         if (examplesBox) examplesBox.hidden = true;
     } else if (videoA && !videoB) {
@@ -716,26 +721,23 @@ function updateSectionsForFocus() {
 }
 [searchA, searchB].forEach(el => {
     if (!el) return;
-    el.addEventListener("focus", () => {
-        searchFocusCount++;
-        updateSectionsForFocus();
-    });
-    el.addEventListener("blur", () => {
-        // Small delay so a click on a suggestion (which blurs the
-        // input first) has time to complete its selection before this
-        // re-evaluates -- if a video ends up selected, updatePickerState
-        // will already have the relevant section hidden by then anyway.
-        setTimeout(() => {
-            searchFocusCount = Math.max(0, searchFocusCount - 1);
-            updateSectionsForFocus();
-        }, 150);
-    });
+    el.addEventListener("input", updateSectionsForOpenDropdowns);
+    // Also catches Escape (which closes the dropdown without an
+    // "input" event) and the moment focus leaves with the dropdown
+    // still technically open from a prior keystroke.
+    el.addEventListener("keydown", () => setTimeout(updateSectionsForOpenDropdowns, 0));
+    el.addEventListener("blur", () => setTimeout(updateSectionsForOpenDropdowns, 150));
 });
 
 const clearAButton = document.getElementById("compare-a-clear");
 const clearBButton = document.getElementById("compare-b-clear");
+const clearAllButton = document.getElementById("compare-clear-all");
 if (clearAButton) clearAButton.addEventListener("click", () => clearSelection(selectA, searchA, suggestionsA));
 if (clearBButton) clearBButton.addEventListener("click", () => clearSelection(selectB, searchB, suggestionsB));
+if (clearAllButton) clearAllButton.addEventListener("click", () => {
+    clearSelection(selectA, searchA, suggestionsA);
+    clearSelection(selectB, searchB, suggestionsB);
+});
 
 const hadDeepLink = /[ab]=[A-Za-z0-9_-]{11}/.test(location.hash);
 if (hadDeepLink) {

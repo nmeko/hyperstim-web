@@ -734,6 +734,11 @@ iframe {
     font-size: 0.9rem;
 }
 
+#compare-clear-all {
+    display: block;
+    margin: 0.75rem auto 0;
+}
+
 .compare-autocomplete-wrap {
     position: relative;
 }

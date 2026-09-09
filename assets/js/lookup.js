@@ -345,7 +345,9 @@ function findVideo(rawInput) {
     const query = (rawInput || "").trim().toLowerCase();
     if (!query) return null;
     return SITE_DATA.videos.find(v =>
-        v.title.toLowerCase().includes(query) || v.channel.toLowerCase().includes(query)
+        v.title.toLowerCase().includes(query) ||
+        v.channel.toLowerCase().includes(query) ||
+        (deriveTopic(v) || "").toLowerCase().includes(query)
     ) || null;
 }
 
