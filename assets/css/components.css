@@ -1114,6 +1114,7 @@ html[data-contrast="high"] .matrix-cell.diff-highlight {
 
 @media (max-width: 650px) {
     .compare-selects { flex-direction: column; align-items: center; }
+    .compare-suggestions { width: 100%; }
 }
 
 .compare-meter-row {

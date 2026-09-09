@@ -486,9 +486,12 @@ function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo) {
         // word never sees videos past whatever number was picked.
         // Instead, the first batch renders immediately so typing stays
         // responsive, and the remaining matches (if any) append moments
-        // later.
+        // later. Also matches against the category (deriveTopic), so
+        // typing "gaming" or "educational" surfaces videos in that
+        // category even when that word never appears in their title or
+        // channel name.
         const allMatches = SITE_DATA.videos.filter(v =>
-            `${v.title}: ${v.channel}`.toLowerCase().includes(query)
+            `${v.title}: ${v.channel}: ${deriveTopic(v) || ""}`.toLowerCase().includes(query)
         );
         const firstBatch = allMatches.slice(0, AUTOCOMPLETE_FIRST_BATCH_SIZE);
         const rest = allMatches.slice(AUTOCOMPLETE_FIRST_BATCH_SIZE);
