@@ -412,7 +412,7 @@ function findVideoById(id) {
     return _videosByIdMap.get(id) || null;
 }
 
-const AUTOCOMPLETE_FIRST_BATCH_SIZE = 25;
+const AUTOCOMPLETE_FIRST_BATCH_SIZE = 8;
 
 // Lazily cached, computed once per video rather than rebuilt on every
 // keystroke -- with 16,675 videos, recomputing this concatenation and

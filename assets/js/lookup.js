@@ -15,7 +15,7 @@ let activeVideos = SITE_DATA.videos.slice();
 // now paginates too, just with a much larger page size. Resets whenever
 // the underlying result set changes (new search/filter).
 const MOBILE_PAGE_SIZE = 5;
-const DESKTOP_PAGE_SIZE = 30;
+const DESKTOP_PAGE_SIZE = 15;
 const MOBILE_BREAKPOINT = "(max-width: 600px)";
 let visibleCount = DESKTOP_PAGE_SIZE;
 
