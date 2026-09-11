@@ -728,13 +728,6 @@ function updateSectionsForOpenDropdowns() {
 }
 [searchA, searchB].forEach(el => {
     if (!el) return;
-    el.addEventListener("input", updateSectionsForOpenDropdowns);
-    // Escape closes the dropdown without firing an "input" event, so
-    // it needs its own check -- narrowed to just this key rather than
-    // every keystroke, which was running this twice per character typed.
-    el.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") setTimeout(updateSectionsForOpenDropdowns, 0);
-    });
     el.addEventListener("blur", () => setTimeout(updateSectionsForOpenDropdowns, 150));
 });
 
