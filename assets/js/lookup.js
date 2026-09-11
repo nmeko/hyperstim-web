@@ -474,21 +474,33 @@ function scrollResultsIntoView() {
 
 function runLookup() {
     const query = input.value;
-    const video = findVideo(query);
-    showDetails(video, !video && query.trim().length > 0, query);
 
-    // The search box doubles as a live filter for the card grid below
-    // (see the "input" listener near the bottom of this file). Left
-    // as-is after a successful lookup, a pasted URL or raw video ID
-    // would keep filtering that grid too -- and since no title or
-    // channel literally contains a URL/ID string, the grid would be
-    // stuck showing zero results with no obvious reason why. Clearing
-    // the box once the lookup succeeds lets the grid revert to
-    // showing everything, matching what the person actually did (find
-    // one specific video), not what the leftover text looks like.
-    if (video) {
-        input.value = "";
-        applyFiltersAndSort();
+    // A YouTube URL or bare video ID unambiguously identifies one specific
+    // video, so jumping straight to its details page is correct here --
+    // there's nothing else to show a list of.
+    const id = youtubeId(query);
+    if (id) {
+        const video = SITE_DATA.videos.find(v => v.video_id === id);
+        showDetails(video, !video && query.trim().length > 0, query);
+        if (video) {
+            input.value = "";
+            applyFiltersAndSort();
+        }
+        return;
+    }
+
+    // A general text query is ambiguous -- "cocomelon" matches 234 videos,
+    // and findVideo()'s old approach of jumping to whichever one happened
+    // to come first in the dataset array picked an arbitrary result with
+    // no indication why, while hiding the other 233 entirely. The grid
+    // below is already correctly filtered to this exact query (see the
+    // "input" listener further down), so revealing that instead is both
+    // more honest about what actually matched and closer to how a
+    // YouTube-style search results list behaves.
+    if (query.trim().length > 0) {
+        videoSuggestions.hidden = true;
+        scrollResultsIntoView();
+        return;
     }
 }
 
