@@ -626,7 +626,7 @@ if (input) {
         gridFilterDebounce = setTimeout(() => {
             applyFiltersAndSort();
             gridFilterDebounce = null;
-        }, 120);
+        }, 220);
     });
 }
 if (topicFilter) topicFilter.addEventListener("change", applyFiltersAndSort);
