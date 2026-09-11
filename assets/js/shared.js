@@ -431,7 +431,23 @@ function getSearchText(video) {
 function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo, onVisibilityChange) {
     if (!inputEl || !suggestionsEl) return;
     let pendingAppend = null;
+    let pendingAppendRest = null;
+    let pendingAppendQuery = null;
     let highlightedIndex = -1;
+
+    function appendPendingRest() {
+        if (!pendingAppendRest) return;
+        if (inputEl.value.trim().toLowerCase() !== pendingAppendQuery) {
+            pendingAppendRest = null;
+            pendingAppendQuery = null;
+            pendingAppend = null;
+            return;
+        }
+        suggestionsEl.insertAdjacentHTML("beforeend", pendingAppendRest.map(suggestionItemHTML).join(""));
+        pendingAppendRest = null;
+        pendingAppendQuery = null;
+        pendingAppend = null;
+    }
 
     function notifyVisibilityChange() {
         if (typeof onVisibilityChange === "function") onVisibilityChange();
@@ -485,7 +501,7 @@ function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo, onVisibilityCha
     inputEl.addEventListener("input", () => {
         const raw = inputEl.value.trim();
 
-        if (pendingAppend) { clearTimeout(pendingAppend); pendingAppend = null; }
+        if (pendingAppend) { clearTimeout(pendingAppend); pendingAppend = null; pendingAppendRest = null; pendingAppendQuery = null; }
         if (searchDebounce) { clearTimeout(searchDebounce); searchDebounce = null; }
 
         // Pasting a recognizable link is a deliberate, one-time action
@@ -539,10 +555,10 @@ function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo, onVisibilityCha
             renderSuggestions(firstBatch);
 
             if (rest.length) {
+                pendingAppendRest = rest;
+                pendingAppendQuery = query;
                 pendingAppend = setTimeout(() => {
-                    if (inputEl.value.trim().toLowerCase() !== query) return;
-                    suggestionsEl.insertAdjacentHTML("beforeend", rest.map(suggestionItemHTML).join(""));
-                    pendingAppend = null;
+                    appendPendingRest();
                 }, 30);
             }
             searchDebounce = null;
@@ -564,6 +580,9 @@ function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo, onVisibilityCha
             e.stopImmediatePropagation();
             const video = findVideoById(all[highlightedIndex].dataset.videoId);
             if (video) selectVideo(video);
+        } else if (e.key === "Enter" && highlightedIndex === -1 && pendingAppendRest) {
+            e.preventDefault();
+            appendPendingRest();
         }
     });
 
