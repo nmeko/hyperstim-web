@@ -620,7 +620,14 @@ audienceButtons.forEach(btn => {
 if (button) button.addEventListener("click", runLookup);
 if (input) {
     input.addEventListener("keydown", e => { if (e.key === "Enter") runLookup(); });
-    input.addEventListener("input", applyFiltersAndSort);
+    let gridFilterDebounce = null;
+    input.addEventListener("input", () => {
+        if (gridFilterDebounce) clearTimeout(gridFilterDebounce);
+        gridFilterDebounce = setTimeout(() => {
+            applyFiltersAndSort();
+            gridFilterDebounce = null;
+        }, 120);
+    });
 }
 if (topicFilter) topicFilter.addEventListener("change", applyFiltersAndSort);
 if (ageFilter) ageFilter.addEventListener("change", applyFiltersAndSort);

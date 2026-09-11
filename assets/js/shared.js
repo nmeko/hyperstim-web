@@ -428,10 +428,14 @@ function getSearchText(video) {
     return video._searchText;
 }
 
-function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo) {
+function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo, onVisibilityChange) {
     if (!inputEl || !suggestionsEl) return;
     let pendingAppend = null;
     let highlightedIndex = -1;
+
+    function notifyVisibilityChange() {
+        if (typeof onVisibilityChange === "function") onVisibilityChange();
+    }
 
     function items() {
         return Array.from(suggestionsEl.querySelectorAll(".compare-suggestion-item"));
@@ -452,6 +456,7 @@ function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo) {
         suggestionsEl.innerHTML = "";
         inputEl.setAttribute("aria-expanded", "false");
         highlightedIndex = -1;
+        notifyVisibilityChange();
     }
 
     function selectVideo(video) {
@@ -465,6 +470,7 @@ function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo) {
         suggestionsEl.hidden = matches.length === 0;
         inputEl.setAttribute("aria-expanded", String(matches.length > 0));
         highlightedIndex = -1;
+        notifyVisibilityChange();
     }
 
     suggestionsEl.addEventListener("click", e => {
@@ -492,6 +498,7 @@ function wireAutocomplete(inputEl, suggestionsEl, onSelectVideo) {
 
             if (typeof startLiveAnalysis === "function" && typeof looksLikeUnconfigured === "function" && !looksLikeUnconfigured()) {
                 suggestionsEl.hidden = false;
+                notifyVisibilityChange();
                 inputEl.setAttribute("aria-expanded", "true");
                 startLiveAnalysis(raw, suggestionsEl, (result) => {
                     liveAnalyzedVideos[result.video_id] = result;

@@ -91,7 +91,7 @@ function wirePickerSearch(inputEl, selectEl, suggestionsEl, onSelect) {
         ensureOption(selectEl, video.video_id);
         selectEl.value = video.video_id;
         onSelect();
-    });
+    }, updateSectionsForOpenDropdowns);
 }
 
 /* =========================================================
