@@ -121,7 +121,8 @@ jobs:
   # from forks, which get no secrets.
   sonar:
     needs: [frontend, backend]
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    # Only upstream has the SONAR_TOKEN secret; skip on forks.
+    if: github.repository == 'AISmithLab/hyperstim' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
