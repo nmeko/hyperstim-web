@@ -8,6 +8,8 @@
 How stimulating are kids’ YouTube videos?
 
 > **Fork note:** this repository is a fork of [AISmithLab/hyperstim](https://github.com/AISmithLab/hyperstim), synced to upstream commit `1e643cb` (November 2026). The code, data and artwork are the HyperStim team's, used under the [Apache 2.0 license](LICENSE). The badges and links below point to the original project.
+>
+> **Free demo:** https://nmeko.github.io/hyperstim-web/ is published by `.github/workflows/pages-fork.yml` on every push to `main`. It runs on the frontend's built-in sample data, since live data needs the backend server. One-time setup: **Settings → Pages → Source: GitHub Actions**.
 
 ## What it is
 
