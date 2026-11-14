@@ -1,0 +1,37 @@
+name: A score or detail looks wrong
+description: A video's or channel's score, measurements, category or details look wrong.
+labels: [data, triage]
+body:
+  - type: input
+    id: link
+    attributes:
+      label: Video or channel link
+      description: A link to the video or channel on HyperStim? or on YouTube.
+    validations:
+      required: true
+  - type: dropdown
+    id: what
+    attributes:
+      label: What looks wrong?
+      options:
+        - The score
+        - A measurement
+        - The category
+        - The channel name or video title
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why do you think so?
+      description: For example, what you see in the video that the numbers don't show.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before you submit
+      options:
+        - label: I haven't included personal information (names, emails, children's details). Issues are public.
+          required: true

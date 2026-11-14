@@ -1,0 +1,58 @@
+name: Deploy
+
+# Builds the frontend from a release tag and publishes it to GitHub Pages. ./release.sh
+# pushes the tag after the backend is live and after CI passed on the commit (plan 010).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      NEXT_PUBLIC_API_BASE: ${{ vars.NEXT_PUBLIC_API_BASE }}
+      NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH }}
+      NEXT_PUBLIC_GA_ID: ${{ vars.NEXT_PUBLIC_GA_ID }}
+      NEXT_PUBLIC_SITE_ORIGIN: ${{ vars.NEXT_PUBLIC_SITE_ORIGIN }}
+      NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${{ vars.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }}
+      NEXT_PUBLIC_API_MOCK: ""
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the Actions variables
+        run: |
+          [ -n "$NEXT_PUBLIC_API_BASE" ] || { echo "Actions variable NEXT_PUBLIC_API_BASE is not set"; exit 1; }
+          [ -n "$NEXT_PUBLIC_BASE_PATH" ] || { echo "Actions variable NEXT_PUBLIC_BASE_PATH is not set"; exit 1; }
+          [ -n "$NEXT_PUBLIC_SITE_ORIGIN" ] || { echo "Actions variable NEXT_PUBLIC_SITE_ORIGIN is not set"; exit 1; }
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: frontend/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

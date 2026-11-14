@@ -1,0 +1,6 @@
+#!/bin/sh
+# hyperstim-release: written by deploy/setup.sh. Runs release.sh of the clone you are in,
+# for this server's prod instance (plan 010).
+top="$(git rev-parse --show-toplevel 2>/dev/null)" && [ -x "$top/release.sh" ] ||
+  { echo "Run hyperstim-release inside a clone of the website repo." >&2; exit 1; }
+PROD_DIR="${PROD_DIR}" exec "$top/release.sh" "$@"

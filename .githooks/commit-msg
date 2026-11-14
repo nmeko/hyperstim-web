@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Checks a commit message's first line: Conventional Commits, as in DEVELOPMENT.md (plans 010, 016).
+# ./dev.sh turns this on for the clone (git config core.hooksPath .githooks).
+set -euo pipefail
+
+subject="$(grep -v '^#' "$1" | grep -m 1 . || true)"
+types='feat|fix|perf|refactor|style|test|docs|build|ci|chore|data'
+
+# git's own subjects (merge, revert, fixup/squash for a later rebase) pass as they are.
+[[ $subject =~ ^(Merge |Revert \"|fixup! |squash! |amend! ) ]] && exit 0
+[[ $subject =~ ^($types)!?:\ [^\ ] ]] && exit 0
+
+cat >&2 <<MSG
+commit-msg: the first line must be "<type>[!]: <subject> (plan NNN)", e.g.
+  feat: Add the compare page for two videos or two channels (plan 008)
+Types: ${types//|/, }. See "Commit messages" in DEVELOPMENT.md.
+Got: $subject
+MSG
+exit 1

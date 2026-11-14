@@ -1,0 +1,15 @@
+{
+  "name": "hyperstim-safari-check",
+  "private": true,
+  "description": "The Safari check (plan 017): a short end-to-end suite in the WebKit of the newest shipping Safari, which the main suite's newer WebKit doesn't match.",
+  "scripts": {
+    "install-browser": "PLAYWRIGHT_BROWSERS_PATH=\"${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright-safari}\" playwright install webkit",
+    "test": "PLAYWRIGHT_BROWSERS_PATH=\"${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright-safari}\" playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.57.0"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
+}

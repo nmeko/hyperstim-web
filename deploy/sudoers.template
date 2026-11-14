@@ -1,0 +1,4 @@
+# Lets the release group run ./release.sh (plan 010): act as the service user, and
+# restart the API and the collector (plan 013). Nothing else as root.
+%${RELEASE_GROUP} ALL=(${SERVICE_USER}) NOPASSWD: ALL
+%${RELEASE_GROUP} ALL=(root) NOPASSWD: /usr/bin/systemctl restart ${SERVICE}, /usr/bin/systemctl restart ${SERVICE}-collector

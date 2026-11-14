@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-hand: var(--font-shantell-sans), "Comic Sans MS", cursive;
+
+  --color-navy: #0f2e8a;
+  --color-ink: #4a5262;
+  --color-primary: #0f4a9c;
+  --color-marker: #f8e683;
+  --color-sunny: #f8d040;
+  --color-scale-low: #f8d040;
+  --color-scale-mid: #f8a048;
+  --color-scale-high: #f85858;
+  --color-butter: #fef8d4;
+  --color-mint: #e5f6e6;
+  --color-sky: #eef6fa;
+  --color-leaf: #448d62;
+  --color-sky-blue: #32adf7;
+  --color-coral: #fd7371;
+}
+
+@layer base {
+  html {
+    background: var(--color-white);
+    color: var(--color-ink);
+    /* Always reserve the scrollbar's space, so the centred header and content stay in the
+       same place whether or not a page is long enough to scroll. */
+    scrollbar-gutter: stable;
+  }
+
+  /* Illustrations are not selectable or draggable on any page. */
+  img {
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+}
+
+/* Yellow marker stroke behind key words in headings. */
+.marker {
+  background-image: linear-gradient(
+    100deg,
+    transparent 0.2em,
+    var(--color-marker) 0.4em,
+    var(--color-marker) calc(100% - 0.4em),
+    transparent calc(100% - 0.2em)
+  );
+  background-size: 100% 55%;
+  background-position: 0 85%;
+  background-repeat: no-repeat;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding-inline: 0.15em;
+  margin-inline: -0.15em;
+}
+
+@theme {
+  /* Not in the 001 palette: needed for readable error text (≥ 4.5:1 on white and butter). */
+  --color-error: #b3261e;
+}
+
+@layer base {
+  :focus-visible {
+    outline: 3px solid var(--color-navy);
+    outline-offset: 2px;
+  }
+}
+
+@theme {
+  /* The over-years chart's dots and line fading to a new measurement. */
+  --animate-fade-in: fade-in 200ms ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+}
+

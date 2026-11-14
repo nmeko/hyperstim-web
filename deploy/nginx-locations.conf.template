@@ -1,0 +1,12 @@
+# The prod API under /v2/ (plan 010), included in the API host's server block.
+# /v2/api/... goes to the service's /api/...; anything else under /v2/ is 404.
+# No request-rate limits (plan 010); nginx-proxy.conf caps connections per IP.
+
+location /v2/api/ {
+    include ${PROD_DIR}/nginx-proxy.conf;
+    proxy_pass http://127.0.0.1:${PORT}/api/;
+}
+
+location /v2/ {
+    return 404;
+}

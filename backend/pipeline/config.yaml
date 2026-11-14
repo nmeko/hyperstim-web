@@ -1,0 +1,5 @@
+# Directories for 04_extract_features_v2.py, relative to this folder. Clips and
+# caches never go in git (pipeline/output/ is ignored); on the server, make
+# output/clips a symlink to a disk with room, or pass --clips-dir / --cache-dir.
+output_dir: "./output"
+clips_dir: "./output/clips"

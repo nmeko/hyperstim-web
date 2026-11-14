@@ -1,0 +1,45 @@
+# systemd unit for the collector (plan 013): grows the dataset. Written by deploy/setup.sh.
+# Started by release.sh, which restarts it after the API with each release.
+[Unit]
+Description=HyperStim website collector (prod)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=${SERVICE_USER}
+Group=${SERVICE_USER}
+WorkingDirectory=${PROD_DIR}/releases/current/backend
+EnvironmentFile=${PROD_DIR}/env
+Environment=HOME=${PROD_DIR}/data PATH=${PROD_DIR}/bin:/usr/bin:/bin
+ExecStart=${PROD_DIR}/releases/current/backend/.venv/bin/python -m hyperstim_api.collector run
+Restart=on-failure
+RestartSec=60
+# A download or measurement in progress is dropped and done again later.
+TimeoutStopSec=30
+
+# At most one core, after everything else on the server (plan 013).
+CPUQuota=100%
+CPUWeight=20
+Nice=10
+IOSchedulingClass=idle
+MemoryMax=2G
+
+# It opens downloaded videos with ffmpeg: the same limits as the API.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+ReadWritePaths=${PROD_DIR}/data ${COLLECTOR_CLIPS_DIR}
+
+[Install]
+WantedBy=multi-user.target

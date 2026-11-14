@@ -1,0 +1,32 @@
+name: Release page
+
+# Creates the GitHub Release page for a release tag, with the tag's message (the release notes
+# ./release.sh writes) as its text (plan 010). Run it by hand for a tag whose commit doesn't
+# have this workflow yet: a tag push runs the workflows of the tagged commit.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, e.g. v1.4.0
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release-page:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      # From GitHub's API, not a checkout: actions/checkout turns an annotated tag into a plain one.
+      - name: Read the tag's message
+        run: |
+          sha="$(gh api "repos/$GH_REPO/git/ref/tags/$TAG" --jq .object.sha)"
+          gh api "repos/$GH_REPO/git/tags/$sha" --jq .message >notes.md
+      - name: Create the release
+        run: gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md

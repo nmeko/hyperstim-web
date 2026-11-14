@@ -1,0 +1,13 @@
+# Shared by the /v2/ locations (plan 010).
+limit_conn ${SERVICE}_conn 20;
+limit_conn_status 429;
+client_max_body_size 16k;
+
+proxy_set_header Host $host;
+# Set, not appended to: the API trusts this for the per-IP limit, so a visitor can't fake it.
+proxy_set_header X-Forwarded-For $remote_addr;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_connect_timeout 5s;
+# A channel lookup can take up to a minute (LOOKUP_TIMEOUT_S).
+proxy_read_timeout 75s;
+proxy_send_timeout 10s;

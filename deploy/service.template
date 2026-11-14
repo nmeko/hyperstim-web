@@ -1,0 +1,39 @@
+# systemd unit for the prod API (plan 010). Written by deploy/setup.sh.
+[Unit]
+Description=HyperStim website API (prod)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=${SERVICE_USER}
+Group=${SERVICE_USER}
+WorkingDirectory=${PROD_DIR}/releases/current/backend
+EnvironmentFile=${PROD_DIR}/env
+Environment=HOME=${PROD_DIR}/data PATH=${PROD_DIR}/bin:/usr/bin:/bin
+# One process: the live-analysis queue lives in it (backend/README.md).
+ExecStart=${PROD_DIR}/releases/current/backend/.venv/bin/uvicorn --factory hyperstim_api.main:create_app --host 127.0.0.1 --port ${PORT} --proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=always
+RestartSec=5
+
+# The pipeline opens downloaded videos with ffmpeg: limit what a malicious one could do.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+ReadWritePaths=${PROD_DIR}/data
+# Measuring uses at most 4 cores (MEASURE_CORES); one more for the API itself.
+CPUQuota=500%
+MemoryMax=8G
+
+[Install]
+WantedBy=multi-user.target

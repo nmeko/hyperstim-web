@@ -1,0 +1,13 @@
+# Runs the daily commit of the collected dataset (plan 013). Written by deploy/setup.sh.
+[Unit]
+Description=HyperStim website: commit the collected dataset daily (prod)
+
+[Timer]
+# Just after midnight UTC, once the collector has closed the day before (its counts and the
+# day-end copy of the files, all at 23:59:59).
+OnCalendar=*-*-* 00:05:00 UTC
+# A run missed while the server was off happens at the next boot.
+Persistent=true
+
+[Install]
+WantedBy=timers.target
