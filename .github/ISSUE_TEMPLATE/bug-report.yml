@@ -1,0 +1,65 @@
+name: Bug report
+description: Something on the site, the API or the dev setup doesn't work as it should.
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for letting us know. The more we can see what you saw, the faster we can fix it.
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where is the problem?
+      options:
+        - Website
+        - API
+        - Dev setup or docs
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Page link
+      description: The page where it happened, if it's on the website.
+      placeholder: https://aismithlab.com/hyperstim/…
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser, with versions
+      description: For a dev setup problem, your operating system and tool versions.
+      placeholder: e.g. iPhone 15, iOS 26.1, Safari 26.1
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Optional. Drag an image here.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before you submit
+      options:
+        - label: I haven't included personal information (names, emails, children's details). Issues are public.
+          required: true

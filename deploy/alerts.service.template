@@ -1,0 +1,32 @@
+# The hourly alert check (plan 013, decision 12): opens, comments on and closes GitHub issues
+# from fixed templates when the collector or one of its jobs hasn't worked for a day.
+# Written by deploy/setup.sh; started by its timer.
+[Unit]
+Description=HyperStim website: alert check (prod)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=${SERVICE_USER}
+Group=${SERVICE_USER}
+WorkingDirectory=${PROD_DIR}/releases/current/backend
+EnvironmentFile=${PROD_DIR}/env
+# The issues token: readable by root only; systemd hands it to this service alone.
+EnvironmentFile=${PROD_DIR}/alerts.env
+Environment=HOME=${PROD_DIR}/data ALERT_DATA_UNIT=${SERVICE}-data.service
+ExecStart=${PROD_DIR}/releases/current/backend/.venv/bin/python -m hyperstim_api.collector alerts
+Nice=10
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+# Its memory of open issues (alerts.json) sits next to collector.db.
+ReadWritePaths=${PROD_DIR}/data/collector

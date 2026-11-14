@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Social video: Five Little Ducks</title>
+<!-- The post's social video (plan 018, Social video): the post's clip comparison as a 1920 × 1080
+     film. scripts/social-video.mjs serves this folder with the clips and either opens it for
+     review or records it frame by frame (?render). Not part of the site. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
+<style>
+  body { margin: 0; background: #eef6fa; font: 16px/1.5 Nunito, system-ui, sans-serif; color: #4a5262; }
+  main { max-width: 1280px; margin: 0 auto; padding: 24px 16px; }
+  canvas { display: block; width: 100%; height: auto; background: #fff; border-radius: 12px; }
+  .controls { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+  .controls button { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(15, 46, 138, .15); background: #fff; color: #0f2e8a; font: 600 15px Nunito, sans-serif; }
+  .controls button[aria-pressed="true"] { background: #f8d040; border-color: #f8d040; }
+  .controls input { flex: 1; }
+  .render main { padding: 0; max-width: none; }
+  .render canvas { width: 1920px; height: 1080px; border-radius: 0; }
+  .render .controls { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <canvas width="1920" height="1080" aria-label="The two videos side by side, played one at a time, with their scene changes and then their motion charted under them."></canvas>
+  <div class="controls">
+    <button type="button" id="play">Play</button>
+    <input type="range" id="scrub" min="0" step="0.05" value="0" aria-label="Position in the film">
+    <span id="time">0:00</span>
+    <button type="button" id="sound" aria-pressed="false">Sound</button>
+  </div>
+</main>
+<script>
+"use strict";
+
+// ---- Timing (seconds) ----
+// Scene changes: A's verse, then B's; the switch to Motion and a swipe; Motion: A's, then B's.
+const LEAD = 0.6; // before A's first verse
+const GAP = 0.6; // between A's verse and B's
+const SWIPE = 0.7; // the swipe to Motion, after the rest that follows B's first verse
+const AFTER_SWIPE = 0.2;
+const REVEAL = 0.3; // a side comes back from faded over this, ending as its video starts
+const DIM = 0.8; // how far the side that isn't playing fades
+const HOLD = REVEAL + 0.5; // after B's verse: A comes back, then both rest
+
+// ---- Look: the post's widget (ClipCompare; STYLE.md, Clip comparison) ----
+// Shapes at Z times the widget's CSS pixels, text and letters at F times so they read in a feed.
+// Laid out in two columns: each side's chart sits under its own video.
+const W = 1920, H = 1080, Z = 1.6, F = 3.2;
+const C = { navy: "#0f2e8a", ink: "#4a5262", sunny: "#f8d040", white: "#ffffff", mid: "#f8a048" };
+const SANS = "Nunito, system-ui, sans-serif";
+const TABS = ["Scene changes", "Motion"];
+const MOTION_TOP = 30; // the gridlines run 0 to 30; a higher value rises above the top line
+
+const clamp = (v, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
+const ease = (p) => ((p = clamp(p)), p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2);
+const pop = (p) => ((p = clamp(p)), 1 + 2.9 * (p - 1) ** 3 + 1.9 * (p - 1) ** 2); // a slight overshoot
+
+// The layout, top to bottom, centered in the frame. Gaps next to text grow with the text (F);
+// gaps between shapes stay at the shapes' scale (Z). The charts take the height that's left.
+const TOP = 36, VIDEO_H = 470;
+const SWITCH_H = 36 * F; // a little lower than the widget's 44 px
+const SWITCH_GAP = 18 * F, HEAD_H = 34 * F, HEAD_GAP = 6 * F, VIDEO_GAP = 20 * Z;
+const PANEL_PAD = 4 * F, PANEL_BOTTOM = 8 * Z + 2; // room for peaks over 30
+const LABELS_H = 12 * F * 1.15; // the time labels under each chart
+const PLOT_TOP = 6 * Z;
+const PLOT_H = H - 2 * TOP - SWITCH_H - SWITCH_GAP - HEAD_H - HEAD_GAP - VIDEO_H - VIDEO_GAP - PANEL_PAD - PLOT_TOP - 6 * Z - LABELS_H - PANEL_BOTTOM;
+const PLOT_BASE = PLOT_TOP + PLOT_H;
+const L = (() => {
+  const top = TOP, vh = VIDEO_H, vw = (vh * 16) / 9;
+  const width = 2 * vw + VIDEO_GAP, x0 = (W - width) / 2;
+  const head = top + SWITCH_H + SWITCH_GAP, video = head + HEAD_H + HEAD_GAP, panel = video + vh + VIDEO_GAP;
+  return { top, vw, vh, width, x0, head, video, panel, xs: [x0, x0 + vw + VIDEO_GAP] };
+})();
+
+let DATA, TURNS, SWITCH, DURATION;
+
+/** The film's turns, from the measured verses: when each starts and how long it plays. */
+function timeline(data) {
+  const len = (part) => Math.round((part.end - part.start) * 100) / 100;
+  const [cuts, motion] = data.tabs;
+  const turns = [];
+  let t = LEAD;
+  const add = (tab, side) => { turns.push({ kind: tab.kind, side, t0: t, len: len(tab[side]), start: tab[side].start }); t += len(tab[side]); };
+  add(cuts, "a"); t += GAP; add(cuts, "b"); t += HOLD;
+  const at = t; t += SWIPE + AFTER_SWIPE;
+  add(motion, "a"); t += GAP; add(motion, "b"); t += HOLD;
+  return { turns, switchAt: at, duration: Math.round(t * 100) / 100 };
+}
+
+// ---- Drawing ----
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function text(ctx, s, x, y, { size, weight = 400, color = C.navy, align = "left", base = "alphabetic" }) {
+  ctx.save(); ctx.font = `${weight} ${size}px ${SANS}`; ctx.fillStyle = color;
+  ctx.textAlign = align; ctx.textBaseline = base; ctx.fillText(s, x, y); ctx.restore();
+}
+function fit(ctx, s, font, room) { // cut with "…" to fit, as the widget's truncate
+  ctx.save(); ctx.font = font; let t = s;
+  if (ctx.measureText(t).width > room) { while (t && ctx.measureText(t + "…").width > room) t = t.slice(0, -1); t += "…"; }
+  ctx.restore(); return t;
+}
+function letter(ctx, side, x, y) { // a white circle with a thin navy/35 ring, the bold navy letter
+  const d = 24 * F;
+  ctx.save(); ctx.beginPath(); ctx.arc(x + d / 2, y + d / 2, d / 2 - 0.75 * F, 0, Math.PI * 2);
+  ctx.fillStyle = C.white; ctx.fill(); ctx.lineWidth = 1.5 * F; ctx.strokeStyle = "rgba(15,46,138,.35)"; ctx.stroke(); ctx.restore();
+  text(ctx, side.toUpperCase(), x + d / 2, y + d / 2 + 1, { size: 14 * F, weight: 700, align: "center", base: "middle" });
+}
+function headLine(ctx, side, x, y, w) { // the letter, centered on the title; the title over the channel
+  letter(ctx, side, x, y + 14 * F - 0.36 * 14 * F - 12 * F);
+  const tx = x + 32 * F, room = w - 32 * F, video = DATA.videos[side];
+  text(ctx, fit(ctx, video.title, `600 ${14 * F}px ${SANS}`, room), tx, y + 14 * F, { size: 14 * F, weight: 600 });
+  text(ctx, fit(ctx, video.channel, `400 ${12 * F}px ${SANS}`, room), tx, y + 31 * F, { size: 12 * F, color: C.ink });
+}
+// The widget's SegmentedControl, showing only the current measure: one pill in its border. `slide` 0 → 1
+// changes it to `active`: the label fades out, the pill takes the new label's width and the new label fades in.
+function switchControl(ctx, active, slide, cx, y) {
+  const size = 14 * F, h = SWITCH_H, pad = 4 * F;
+  ctx.save(); ctx.font = `600 ${size}px ${SANS}`;
+  const pw = TABS.map((l) => ctx.measureText(l).width + 24 * F);
+  const from = 1 - active, p = ease(slide), w = pw[from] + (pw[active] - pw[from]) * p;
+  rr(ctx, cx - w / 2 - pad, y, w + 2 * pad, h, h / 2); ctx.fillStyle = C.white; ctx.fill();
+  ctx.strokeStyle = "rgba(15,46,138,.15)"; ctx.lineWidth = Z; ctx.stroke();
+  rr(ctx, cx - w / 2, y + pad, w, h - 2 * pad, (h - 2 * pad) / 2); ctx.fillStyle = C.sunny; ctx.fill();
+  // Centered on the capitals, not the font's line box, which sits the text a little high.
+  const cap = ctx.measureText("M").actualBoundingBoxAscent;
+  for (const [i, alpha] of [[from, 1 - clamp(2 * p)], [active, clamp(2 * p - 1)]]) { // out, then in
+    if (alpha <= 0) continue;
+    ctx.globalAlpha = alpha; text(ctx, TABS[i], cx, y + h / 2 + cap / 2, { size, weight: 600, align: "center" });
+  }
+  ctx.restore();
+}
+// A video, rounded as the widget's preview; `dim` 0 → 1 fades it toward white while the other side plays.
+function drawVideo(ctx, video, x, y, w, h, dim) {
+  ctx.save(); rr(ctx, x, y, w, h, 16 * Z); ctx.clip();
+  ctx.fillStyle = "#e7eaf3"; ctx.fillRect(x, y, w, h);
+  if (video.readyState >= 2) ctx.drawImage(video, x, y, w, h);
+  if (dim > 0) { ctx.fillStyle = `rgba(255,255,255,${DIM * dim})`; ctx.fillRect(x, y, w, h); }
+  ctx.restore();
+}
+function playhead(ctx, x) {
+  ctx.save(); ctx.strokeStyle = C.mid; ctx.lineWidth = 3 * Z; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(x, PLOT_TOP - 2 * Z); ctx.lineTo(x, PLOT_BASE); ctx.stroke(); ctx.restore();
+}
+function timeLabels(ctx, X, end) { // every 5 s, the last with " s"
+  const ks = []; for (let k = 0; k <= end; k += 5) ks.push(k);
+  ks.forEach((k, i) => text(ctx, i === ks.length - 1 ? `${k} s` : String(k), X(k), PLOT_BASE + 6 * Z + 12 * F, { size: 12 * F, color: C.ink, align: k === 0 ? "left" : "center" }));
+}
+const cutsX = (w, end) => (s) => 4 * Z + (s / end) * (w - 16 * Z);
+const motionX = (w, end) => (s) => 24 * F + (s / end) * (w - 24 * F - 12 * Z);
+function cutsChart(ctx, part, ct, w, end, live) {
+  const X = cutsX(w, end), my = PLOT_TOP + PLOT_H / 2, len = part.end - part.start;
+  ctx.save(); ctx.lineCap = "round"; ctx.lineWidth = 2 * Z;
+  ctx.strokeStyle = "rgba(15,46,138,.15)"; ctx.beginPath(); ctx.moveTo(X(0), my); ctx.lineTo(X(len), my); ctx.stroke();
+  ctx.strokeStyle = C.navy; ctx.beginPath(); ctx.moveTo(X(0), my); ctx.lineTo(X(ct), my); ctx.stroke();
+  ctx.fillStyle = C.navy;
+  for (const cut of part.cuts) {
+    if (cut > ct) break;
+    const th = 36 * Z * pop((ct - cut) / 0.3); // each tick pops in
+    rr(ctx, X(cut) - 1.75 * Z, my - th / 2, 3.5 * Z, th, 1.75 * Z); ctx.fill();
+  }
+  if (live && ct < len - 0.05) playhead(ctx, X(ct));
+  ctx.restore();
+}
+function motionChart(ctx, part, ct, w, end, live) {
+  const X = motionX(w, end), Y = (v) => PLOT_BASE - (v / MOTION_TOP) * PLOT_H, len = part.end - part.start;
+  ctx.save(); ctx.lineWidth = Z;
+  for (const g of [0, MOTION_TOP / 2, MOTION_TOP]) {
+    ctx.strokeStyle = g ? "rgba(15,46,138,.08)" : "rgba(15,46,138,.25)";
+    ctx.beginPath(); ctx.moveTo(24 * F, Y(g)); ctx.lineTo(w - 12 * Z, Y(g)); ctx.stroke();
+    text(ctx, String(g), 19 * F, Y(g) + 4 * F, { size: 12 * F, color: C.ink, align: "right" });
+  }
+  // The line so far, broken where a step is null (across a cut), over a light fill.
+  const runs = []; let run = [];
+  for (let i = 0; i < Math.min(part.motion.length, Math.floor(ct / part.step) + 1); i++) {
+    const v = part.motion[i];
+    if (v === null) { if (run.length) runs.push(run); run = []; } else run.push([(i + 0.5) * part.step, v]);
+  }
+  if (run.length) runs.push(run);
+  for (const r of runs) {
+    const path = () => { ctx.beginPath(); r.forEach(([s, v], i) => (i ? ctx.lineTo(X(s), Y(v)) : ctx.moveTo(X(s), Y(v)))); };
+    if (r.length > 1) { path(); ctx.lineTo(X(r.at(-1)[0]), PLOT_BASE); ctx.lineTo(X(r[0][0]), PLOT_BASE); ctx.closePath(); ctx.fillStyle = "rgba(15,46,138,.12)"; ctx.fill(); }
+    path(); ctx.strokeStyle = C.navy; ctx.lineWidth = 2.25 * Z; ctx.lineJoin = ctx.lineCap = "round"; ctx.stroke();
+  }
+  if (live && ct < len - 0.05) playhead(ctx, X(ct));
+  ctx.restore();
+}
+/** A chart's number at ct: the figure, its unit after it, and the rest of the line under them. */
+function numberText(kind, part, ct) {
+  const len = part.end - part.start;
+  if (kind === "cuts") {
+    const n = part.cuts.filter((c) => c <= ct).length;
+    return { figure: String(n), unit: n === 1 ? "cut" : "cuts", line: `in ${ct >= len - 0.05 ? Math.round(len) : Math.floor(ct)} s` };
+  }
+  const v = part.motion.slice(0, Math.floor(ct / part.step) + 1).filter((x) => x !== null);
+  return { figure: (v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0).toFixed(1), unit: "%", line: "of width/s" };
+}
+function numberWidths(ctx, n) { // the figure's width and the whole block's
+  ctx.save();
+  ctx.font = `700 ${22 * F}px ${SANS}`; const fw = ctx.measureText(n.figure).width;
+  ctx.font = `400 ${12 * F}px ${SANS}`; const space = ctx.measureText(" ").width;
+  const block = Math.max(fw + space + ctx.measureText(n.unit).width, ctx.measureText(n.line).width);
+  ctx.restore();
+  return { fw, space, block };
+}
+/** The widest a measure's number gets on either side: the room the charts leave for it. */
+const NUMBER_W = {};
+function numberWidth(ctx, kind) {
+  if (!(kind in NUMBER_W)) {
+    const tab = DATA.tabs[kind === "cuts" ? 0 : 1];
+    let w = 0;
+    for (const s of ["a", "b"]) for (let ct = 0; ct <= tab[s].end - tab[s].start + 0.05; ct += 0.05) w = Math.max(w, numberWidths(ctx, numberText(kind, tab[s], ct)).block);
+    NUMBER_W[kind] = Math.ceil(w);
+  }
+  return NUMBER_W[kind];
+}
+function chartNumber(ctx, kind, part, ct, right, y) { // the figure and its unit over the rest of the line, ending at `right`
+  const n = numberText(kind, part, ct), { fw, space, block } = numberWidths(ctx, n), x = right - block;
+  const lh = 12 * F * 1.25, top = y + PLOT_TOP + (PLOT_H - (22 * F * 1.25 + lh)) / 2;
+  text(ctx, n.figure, x, top + 22 * F, { size: 22 * F, weight: 700 });
+  text(ctx, n.unit, x + fw + space, top + 22 * F, { size: 12 * F, color: C.ink });
+  text(ctx, n.line, x, top + 22 * F * 1.25 + lh - 3 * F, { size: 12 * F, color: C.ink });
+}
+
+function draw(ctx, t, V) {
+  const swipe = clamp((t - SWITCH) / SWIPE), p = ease(swipe);
+  ctx.fillStyle = C.white; ctx.fillRect(0, 0, W, H);
+  switchControl(ctx, t >= SWITCH ? 1 : 0, t >= SWITCH ? swipe : 1, W / 2, L.top);
+  // The titles stay put through the swipe, fading with their videos (blending the two measures' fades).
+  const from = sideDims(t, "cuts"), to = sideDims(t, "motion");
+  ["a", "b"].forEach((s, i) => {
+    ctx.save(); ctx.globalAlpha = 1 - DIM * (from[s] + (to[s] - from[s]) * p);
+    headLine(ctx, s, L.xs[i], L.head, L.vw); ctx.restore();
+  });
+  // The videos and charts swipe as one: Scene changes out to the left, Motion in from the right.
+  if (swipe < 1) scene(ctx, t, V, "cuts", -p * W);
+  if (swipe > 0) scene(ctx, t, V, "motion", (1 - p) * W);
+}
+/** One side: its video, and under it its chart with time labels and number. */
+function column(ctx, t, V, kind, u, s, x, end, dim) {
+  drawVideo(ctx, V[`${s}-${kind}`], x, L.video, L.vw, L.vh, dim);
+  const part = DATA.tabs[kind === "cuts" ? 0 : 1][s], live = t >= u.t0 && t < u.t0 + u.len;
+  const nw = numberWidth(ctx, kind), cw = L.vw - nw - 8 * Z, y = L.panel + PANEL_PAD, X = (kind === "cuts" ? cutsX : motionX)(cw, end);
+  // Before its turn the chart is whole; it gives way to the drawing from 0 as the turn comes.
+  const fresh = ease((t - u.t0 + REVEAL) / REVEAL);
+  const states = [[u.len, 1 - clamp(2 * fresh)], [clamp(t - u.t0, 0, u.len), clamp(2 * fresh - 1)]]; // out, then in
+  ctx.save(); ctx.globalAlpha *= 1 - DIM * dim;
+  ctx.save(); ctx.translate(x, y); timeLabels(ctx, X, end); ctx.restore();
+  for (const [ct, alpha] of states) {
+    if (alpha <= 0) continue;
+    ctx.save(); ctx.globalAlpha *= alpha;
+    ctx.save(); ctx.translate(x, y);
+    if (kind === "cuts") cutsChart(ctx, part, ct, cw, end, live); else motionChart(ctx, part, ct, cw, end, live);
+    ctx.restore();
+    chartNumber(ctx, kind, part, ct, x + L.vw, y); // the block ends at the video's right edge
+    ctx.restore();
+  }
+  ctx.restore();
+}
+/** How faded each side is (0 → 1): the side that isn't playing fades, and both come back once B ends. */
+function sideDims(t, kind) {
+  const turns = Object.fromEntries(TURNS.filter((u) => u.kind === kind).map((u) => [u.side, u]));
+  const duringB = ease((t - turns.b.t0 + REVEAL) / REVEAL) * (1 - ease((t - turns.b.t0 - turns.b.len) / REVEAL));
+  const startA = ease((t - turns.a.t0 + REVEAL) / REVEAL), untilB = 1 - ease((t - turns.b.t0 + REVEAL) / REVEAL);
+  // The film opens on both sides whole, a preview of the results; B fades as A starts. Motion opens with both faded.
+  if (kind === "cuts") return { a: duringB, b: Math.min(startA, untilB) };
+  return { a: Math.max(1 - startA, duringB), b: untilB };
+}
+function scene(ctx, t, V, kind, dx) {
+  const turns = Object.fromEntries(TURNS.filter((u) => u.kind === kind).map((u) => [u.side, u]));
+  const end = Math.max(turns.a.len, turns.b.len); // the axis ends with the longer verse
+  const dims = sideDims(t, kind);
+  ctx.save(); ctx.translate(dx, 0);
+  ["a", "b"].forEach((s, i) => column(ctx, t, V, kind, turns[s], s, L.xs[i], end, dims[s]));
+  ctx.restore();
+}
+
+// ---- Playing ----
+// One video element per side and measure, so both scenes have their own frame during the swipe.
+// `CLIPS` says where each downloaded clip starts in its video (clips/clips.json, from the script).
+function cues(clips) {
+  return TURNS.map((u) => ({ key: `${u.side}-${u.kind}`, side: u.side, t0: u.t0, len: u.len, from: u.start - clips[u.side].start }));
+}
+/** Where a cue's video is at t: its verse's start before its turn, then playing, then its last frame. */
+const target = (c, t) => c.from + clamp(t - c.t0, 0, c.len - 0.05);
+
+async function start() {
+  const render = new URLSearchParams(location.search).has("render");
+  if (render) document.body.classList.add("render");
+  const [data, clips] = await Promise.all(["social-video.json", "clips/clips.json"].map((f) => fetch(f).then((r) => r.json())));
+  DATA = data;
+  ({ turns: TURNS, switchAt: SWITCH, duration: DURATION } = timeline(data));
+  await document.fonts.load(`600 ${14 * F}px Nunito`); await document.fonts.load(`700 ${14 * F}px Nunito`); await document.fonts.load(`400 ${14 * F}px Nunito`);
+  const CUES = cues(clips);
+  const V = {};
+  await Promise.all(CUES.map((c) => new Promise((resolve, reject) => {
+    const v = document.createElement("video");
+    v.muted = true; v.preload = "auto"; v.playsInline = true; v.src = `clips/${clips[c.side].file}`;
+    v.addEventListener("loadeddata", resolve, { once: true }); v.addEventListener("error", () => reject(new Error(v.src)), { once: true });
+    V[c.key] = v;
+  })));
+  const canvas = document.querySelector("canvas"), ctx = canvas.getContext("2d");
+  const seekTo = (v, s) => new Promise((resolve) => {
+    if (Math.abs(v.currentTime - s) < 0.001) return resolve();
+    v.addEventListener("seeked", () => resolve(), { once: true }); v.currentTime = s;
+  });
+
+  // For the render script: draw the frame at t, once every video shows its frame.
+  window.film = {
+    duration: DURATION,
+    turns: TURNS.map((u) => ({ ...u, from: CUES.find((c) => c.key === `${u.side}-${u.kind}`).from })),
+    async frame(t) { await Promise.all(CUES.map((c) => seekTo(V[c.key], target(c, t)))); draw(ctx, t, V); },
+  };
+  await window.film.frame(0);
+  if (render) return;
+
+  // Review: play in real time, one video at a time, with each turn's sound.
+  const play = document.getElementById("play"), scrub = document.getElementById("scrub"), time = document.getElementById("time"), sound = document.getElementById("sound");
+  scrub.max = DURATION;
+  let t = 0, playing = false, wall = 0, base = 0, withSound = false;
+  const sync = (hard) => {
+    for (const c of CUES) {
+      const v = V[c.key], on = playing && t >= c.t0 && t < c.t0 + c.len, tg = target(c, t);
+      v.muted = !(withSound && on);
+      if (on) { if (hard || Math.abs(v.currentTime - tg) > 0.25) v.currentTime = tg; if (v.paused) v.play().catch(() => {}); }
+      else { if (!v.paused) v.pause(); if (Math.abs(v.currentTime - tg) > 0.04) v.currentTime = tg; }
+    }
+  };
+  const show = () => { draw(ctx, t, V); scrub.value = t; time.textContent = `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`; };
+  const loop = () => {
+    if (!playing) return;
+    t = base + (performance.now() - wall) / 1000;
+    if (t >= DURATION) { t = DURATION; playing = false; play.textContent = "Play"; }
+    sync(); show(); requestAnimationFrame(loop);
+  };
+  play.onclick = () => {
+    playing = !playing; play.textContent = playing ? "Pause" : "Play";
+    if (playing) { if (t >= DURATION) t = 0; base = t; wall = performance.now(); sync(true); loop(); } else { sync(); show(); }
+  };
+  scrub.oninput = () => { t = Number(scrub.value); base = t; wall = performance.now(); sync(true); show(); };
+  sound.onclick = () => { withSound = !withSound; sound.setAttribute("aria-pressed", String(withSound)); sync(); };
+  for (const v of Object.values(V)) v.addEventListener("seeked", () => { if (!playing) show(); });
+}
+start().catch((e) => { document.body.dataset.error = String(e); throw e; });
+</script>
+</body>
+</html>

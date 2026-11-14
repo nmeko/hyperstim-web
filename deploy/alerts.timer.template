@@ -1,0 +1,11 @@
+# Runs the alert check every hour (plan 013, decision 12). Written by deploy/setup.sh.
+[Unit]
+Description=HyperStim website: alert check every hour (prod)
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target

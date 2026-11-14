@@ -1,0 +1,20 @@
+date	videos	channels	ch_1	ch_2	ch_3	ch_4	ch_5plus	ch_ready	ch_out	ch_yr_2nd	ch_yr_med	added_v	removed_v	new_ch	note
+2026-11-13	17682	597	0	0	0	1	596	119	380	1.77	5.06	115	0	3	
+2026-11-12	17567	594	0	0	0	0	594	114	378	1.69	5.06	116	0	3	
+2026-11-11	17451	591	0	0	0	0	591	110	373	1.60	5.06	93	0	2	
+2026-11-10	17358	589	0	0	0	0	589	109	357	1.52	5.06	92	0	2	Pace lowered from 150 to 120 videos a day after three blocks
+2026-11-09	17266	587	0	0	0	0	587	110	346	1.44	5.07	133	0	3	New channels join by subscribers, most first; their counts read weekly
+2026-11-08	17133	584	0	0	0	0	584	93	331	1.34	5.07	136	0	3	
+2026-11-07	16997	581	0	0	0	1	580	78	329	1.20	5.08	112	0	2	
+2026-11-06	16885	579	0	0	0	1	578	80	328	1.07	5.09	118	0	2	
+2026-11-05	16767	577	0	0	1	0	576	78	313	0.93	5.09	132	12	3	
+2026-11-04	16647	574	0	0	1	0	573	75	287	0.74	5.10	74	0	3	
+2026-11-03	16573	571	0	1	0	1	569	74	279	0.64	5.11	71	0	3	A third of downloads for new channels to catch up; at most 3 new a day
+2026-11-02	16502	568	0	1	1	0	566	70	277	0.51	5.12	44	0	2	Thinnest channels first; under 5 eligible a year left out; 3 new a day
+2026-11-01	16458	566	1	0	0	0	565	65	240	0.42	5.06	67	0	2	
+2026-10-31	16391	564	12	4	0	1	547	55	240			115	0	0	Counts end at 23:59:59 UTC; ch_ready, ch_out recounted from backups
+2026-10-30	16276	564	36	8	4	0	516	39	215			130	0	0	ch_ready and ch_out as of 2026-10-31 00:00:12 UTC
+2026-10-29	16146	564	57	22	6	0	479	17	188			126	0	53	Each channel gets 5 videos first; failed downloads retried; Fewest-video channels first; channels with under 10% kids' videos left out; Channels with 1–4 videos by score first; at most 3 new channels a day; ch_ready and ch_out as of 2026-10-30 00:00:34 UTC
+2026-10-28	16020	511	28	7	5	1	470	53	145			142	0	18	ch_ready and ch_out as of 2026-10-29 00:00:13 UTC
+2026-10-27	15878	493	17	2	4	1	469	48	145			137	0	18	ch_ready and ch_out as of 2026-10-28 00:00:29 UTC
+2026-10-26	15741	475	4	1	1	0	469	51	145			125	71	3	Collecting starts: 150 videos a day, lowest r first; ch_ready and ch_out as of 2026-10-27 08:26:43 UTC

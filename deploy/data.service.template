@@ -1,0 +1,27 @@
+# The daily commit of the collected dataset to GitHub (plan 013), as the data bot.
+# Written by deploy/setup.sh; started by its timer.
+[Unit]
+Description=HyperStim website: commit the collected dataset (prod)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=${DATA_USER}
+Group=${DATA_USER}
+Environment=HOME=${PROD_DIR}/data-bot
+# The released script, never unreleased main. It commits the files as they stood at the end of
+# the last day, which the collector copies to day-end/ when it closes the day (plan 013).
+ExecStart=${PROD_DIR}/releases/current/scripts/commit-data.sh ${PROD_DIR}/data-repo ${PROD_DIR}/data/collector/collected/day-end
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+ReadWritePaths=${PROD_DIR}/data-bot ${PROD_DIR}/data-repo

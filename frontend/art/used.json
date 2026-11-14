@@ -1,0 +1,18 @@
+{
+  "_comment": "Images shipped with the site: name (file in art/ without .png) -> largest display width in CSS px, or { width, trim: true } to cut off transparent margins first. Output is WebP at 2x that width.",
+  "Logo": 180,
+  "kid_1": 464,
+  "sun_1": 64,
+  "grass_1": 110,
+  "flower_1": 130,
+  "flower_2": 150,
+  "kid_2": 280,
+  "kid_3": 208,
+  "kid_wonder": 324,
+  "kid_lens_downward": 208,
+  "kid_blocks_2": 288,
+  "kid_compare": 312,
+  "kid_quiet": 272,
+  "kid_wave": 244,
+  "kid_notebook": { "width": 272, "trim": true }
+}

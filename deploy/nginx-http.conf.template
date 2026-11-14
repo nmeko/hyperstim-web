@@ -1,0 +1,2 @@
+# Per-IP connection count for the prod API (plan 010), in nginx's http block (conf.d/).
+limit_conn_zone $binary_remote_addr zone=${SERVICE}_conn:10m;
